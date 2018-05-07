@@ -1,7 +1,7 @@
 #!/bin/sh
 
 usage () {
-cat <<EOF
+    cat <<EOF
 Usage: $0 [OPTION]... [VAR=VALUE]... [TARGET]
 
 To assign environment variables (e.g., CC, CFLAGS...), specify them as
@@ -45,16 +45,16 @@ Some influential environment variables:
 Use these variables to override the choices made by configure.
 
 EOF
-exit 0
+    exit 0
 }
 
 # Helper functions
 
 quote () {
-tr '\n' ' ' <<EOF | grep '^[-[:alnum:]_=,./:]* $' >/dev/null 2>&1 && { echo "$1" ; return 0 ; }
+    tr '\n' ' ' <<EOF | grep '^[-[:alnum:]_=,./:]* $' >/dev/null 2>&1 && { echo "$1" ; return 0 ; }
 $1
 EOF
-printf %s\\n "$1" | sed -e "s/'/'\\\\''/g" -e "1s/^/'/" -e "\$s/\$/'/" -e "s#^'\([-[:alnum:]_,./:]*\)=\(.*\)\$#\1='\2#"
+    printf %s\\n "$1" | sed -e "s/'/'\\\\''/g" -e "1s/^/'/" -e "\$s/\$/'/" -e "s#^'\([-[:alnum:]_,./:]*\)=\(.*\)\$#\1='\2#"
 }
 echo () { printf "%s\n" "$*" ; }
 fail () { echo "$*" ; exit 1 ; }
@@ -63,50 +63,50 @@ cmdexists () { type "$1" >/dev/null 2>&1 ; }
 trycc () { test -z "$CC" && cmdexists "$1" && CC=$1 ; }
 
 stripdir () {
-while eval "fnmatch '*/' \"\${$1}\"" ; do eval "$1=\${$1%/}" ; done
+    while eval "fnmatch '*/' \"\${$1}\"" ; do eval "$1=\${$1%/}" ; done
 }
 
 trycppif () {
-printf "checking preprocessor condition %s... " "$1"
-echo "typedef int x;" > "$tmpc"
-echo "#if $1" >> "$tmpc"
-echo "#error yes" >> "$tmpc"
-echo "#endif" >> "$tmpc"
-if $CC $2 -c -o /dev/null "$tmpc" >/dev/null 2>&1 ; then
-printf "false\n"
-return 1
-else
-printf "true\n"
-return 0
-fi
+    printf "checking preprocessor condition %s... " "$1"
+    echo "typedef int x;" > "$tmpc"
+    echo "#if $1" >> "$tmpc"
+    echo "#error yes" >> "$tmpc"
+    echo "#endif" >> "$tmpc"
+    if $CC $2 -c -o /dev/null "$tmpc" >/dev/null 2>&1 ; then
+        printf "false\n"
+        return 1
+    else
+        printf "true\n"
+        return 0
+    fi
 }
 
 tryflag () {
-printf "checking whether compiler accepts %s... " "$2"
-echo "typedef int x;" > "$tmpc"
-if $CC $CFLAGS_TRY $2 -c -o /dev/null "$tmpc" >/dev/null 2>&1 ; then
-printf "yes\n"
-eval "$1=\"\${$1} \$2\""
-eval "$1=\${$1# }"
-return 0
-else
-printf "no\n"
-return 1
-fi
+    printf "checking whether compiler accepts %s... " "$2"
+    echo "typedef int x;" > "$tmpc"
+    if $CC $CFLAGS_TRY $2 -c -o /dev/null "$tmpc" >/dev/null 2>&1 ; then
+        printf "yes\n"
+        eval "$1=\"\${$1} \$2\""
+        eval "$1=\${$1# }"
+        return 0
+    else
+        printf "no\n"
+        return 1
+    fi
 }
 
 tryldflag () {
-printf "checking whether linker accepts %s... " "$2"
-echo "typedef int x;" > "$tmpc"
-if $CC $LDFLAGS_TRY -nostdlib -shared "$2" -o /dev/null "$tmpc" >/dev/null 2>&1 ; then
-printf "yes\n"
-eval "$1=\"\${$1} \$2\""
-eval "$1=\${$1# }"
-return 0
-else
-printf "no\n"
-return 1
-fi
+    printf "checking whether linker accepts %s... " "$2"
+    echo "typedef int x;" > "$tmpc"
+    if $CC $LDFLAGS_TRY -nostdlib -shared "$2" -o /dev/null "$tmpc" >/dev/null 2>&1 ; then
+        printf "yes\n"
+        eval "$1=\"\${$1} \$2\""
+        eval "$1=\${$1# }"
+        return 0
+    else
+        printf "no\n"
+        return 1
+    fi
 }
 
 
@@ -143,61 +143,61 @@ gcc_wrapper=no
 clang_wrapper=no
 
 for arg ; do
-case "$arg" in
---help|-h) usage ;;
---srcdir=*) srcdir=${arg#*=} ;;
---prefix=*) prefix=${arg#*=} ;;
---exec-prefix=*) exec_prefix=${arg#*=} ;;
---bindir=*) bindir=${arg#*=} ;;
---libdir=*) libdir=${arg#*=} ;;
---includedir=*) includedir=${arg#*=} ;;
---syslibdir=*) syslibdir=${arg#*=} ;;
---enable-shared|--enable-shared=yes) shared=yes ;;
---disable-shared|--enable-shared=no) shared=no ;;
---enable-static|--enable-static=yes) static=yes ;;
---disable-static|--enable-static=no) static=no ;;
---enable-optimize) optimize=yes ;;
---enable-optimize=*) optimize=${arg#*=} ;;
---disable-optimize) optimize=no ;;
---enable-debug|--enable-debug=yes) debug=yes ;;
---disable-debug|--enable-debug=no) debug=no ;;
---enable-warnings|--enable-warnings=yes) warnings=yes ;;
---disable-warnings|--enable-warnings=no) warnings=no ;;
---enable-visibility=auto) visibility=auto ;;
---enable-visibility|--enable-visibility=yes) visibility=yes ;;
---disable-visibility|--enable-visibility=no) visibility=no ;;
---enable-wrapper|--enable-wrapper=yes) wrapper=detect ;;
---enable-wrapper=all) wrapper=yes ; gcc_wrapper=yes ; clang_wrapper=yes ;;
---enable-wrapper=gcc) wrapper=yes ; gcc_wrapper=yes ;;
---enable-wrapper=clang) wrapper=yes ; clang_wrapper=yes ;;
---disable-wrapper|--enable-wrapper=no) wrapper=no ;;
---enable-gcc-wrapper|--enable-gcc-wrapper=yes) wrapper=yes ; gcc_wrapper=yes ;;
---disable-gcc-wrapper|--enable-gcc-wrapper=no) wrapper=no ;;
---enable-*|--disable-*|--with-*|--without-*|--*dir=*) ;;
---host=*|--target=*) target=${arg#*=} ;;
---build=*) build=${arg#*=} ;;
--* ) echo "$0: unknown option $arg" ;;
-CC=*) CC=${arg#*=} ;;
-CFLAGS=*) CFLAGS=${arg#*=} ;;
-CPPFLAGS=*) CPPFLAGS=${arg#*=} ;;
-LDFLAGS=*) LDFLAGS=${arg#*=} ;;
-CROSS_COMPILE=*) CROSS_COMPILE=${arg#*=} ;;
-LIBCC=*) LIBCC=${arg#*=} ;;
-*=*) ;;
-*) build=$arg ; target=$arg ;;
-esac
+    case "$arg" in
+        --help|-h) usage ;;
+        --srcdir=*) srcdir=${arg#*=} ;;
+        --prefix=*) prefix=${arg#*=} ;;
+        --exec-prefix=*) exec_prefix=${arg#*=} ;;
+        --bindir=*) bindir=${arg#*=} ;;
+        --libdir=*) libdir=${arg#*=} ;;
+        --includedir=*) includedir=${arg#*=} ;;
+        --syslibdir=*) syslibdir=${arg#*=} ;;
+        --enable-shared|--enable-shared=yes) shared=yes ;;
+        --disable-shared|--enable-shared=no) shared=no ;;
+        --enable-static|--enable-static=yes) static=yes ;;
+        --disable-static|--enable-static=no) static=no ;;
+        --enable-optimize) optimize=yes ;;
+        --enable-optimize=*) optimize=${arg#*=} ;;
+        --disable-optimize) optimize=no ;;
+        --enable-debug|--enable-debug=yes) debug=yes ;;
+        --disable-debug|--enable-debug=no) debug=no ;;
+        --enable-warnings|--enable-warnings=yes) warnings=yes ;;
+        --disable-warnings|--enable-warnings=no) warnings=no ;;
+        --enable-visibility=auto) visibility=auto ;;
+        --enable-visibility|--enable-visibility=yes) visibility=yes ;;
+        --disable-visibility|--enable-visibility=no) visibility=no ;;
+        --enable-wrapper|--enable-wrapper=yes) wrapper=detect ;;
+        --enable-wrapper=all) wrapper=yes ; gcc_wrapper=yes ; clang_wrapper=yes ;;
+        --enable-wrapper=gcc) wrapper=yes ; gcc_wrapper=yes ;;
+        --enable-wrapper=clang) wrapper=yes ; clang_wrapper=yes ;;
+        --disable-wrapper|--enable-wrapper=no) wrapper=no ;;
+        --enable-gcc-wrapper|--enable-gcc-wrapper=yes) wrapper=yes ; gcc_wrapper=yes ;;
+        --disable-gcc-wrapper|--enable-gcc-wrapper=no) wrapper=no ;;
+        --enable-*|--disable-*|--with-*|--without-*|--*dir=*) ;;
+        --host=*|--target=*) target=${arg#*=} ;;
+        --build=*) build=${arg#*=} ;;
+        -* ) echo "$0: unknown option $arg" ;;
+        CC=*) CC=${arg#*=} ;;
+        CFLAGS=*) CFLAGS=${arg#*=} ;;
+        CPPFLAGS=*) CPPFLAGS=${arg#*=} ;;
+        LDFLAGS=*) LDFLAGS=${arg#*=} ;;
+        CROSS_COMPILE=*) CROSS_COMPILE=${arg#*=} ;;
+        LIBCC=*) LIBCC=${arg#*=} ;;
+        *=*) ;;
+        *) build=$arg ; target=$arg ;;
+    esac
 done
 
 for i in srcdir prefix exec_prefix bindir libdir includedir syslibdir ; do
-stripdir $i
+    stripdir $i
 done
 
 #
 # Get the source dir for out-of-tree builds
 #
 if test -z "$srcdir" ; then
-srcdir="${0%/configure}"
-stripdir srcdir
+    srcdir="${0%/configure}"
+    stripdir srcdir
 fi
 abs_builddir="$(pwd)" || fail "$0: cannot determine working directory"
 abs_srcdir="$(cd $srcdir && pwd)" || fail "$0: invalid source directory $srcdir"
@@ -210,9 +210,9 @@ test "$srcdir" != "." -a -f Makefile -a ! -h Makefile && fail "$0: Makefile alre
 i=0
 set -C
 while : ; do i=$(($i+1))
-tmpc="./conf$$-$PPID-$i.c"
-2>|/dev/null > "$tmpc" && break
-test "$i" -gt 50 && fail "$0: cannot create temporary file $tmpc"
+    tmpc="./conf$$-$PPID-$i.c"
+    2>|/dev/null > "$tmpc" && break
+    test "$i" -gt 50 && fail "$0: cannot create temporary file $tmpc"
 done
 set +C
 trap 'rm "$tmpc"' EXIT INT QUIT TERM HUP
@@ -239,10 +239,10 @@ test -n "$CC" || { echo "$0: cannot find a C compiler" ; exit 1 ; }
 printf "checking whether C compiler works... "
 echo "typedef int x;" > "$tmpc"
 if output=$($CC $CPPFLAGS $CFLAGS -c -o /dev/null "$tmpc" 2>&1) ; then
-printf "yes\n"
+    printf "yes\n"
 else
-printf "no; compiler output follows:\n%s\n" "$output"
-exit 1
+    printf "no; compiler output follows:\n%s\n" "$output"
+    exit 1
 fi
 
 #
@@ -262,9 +262,9 @@ printf "checking for C compiler family... "
 cc_ver="$(LC_ALL=C $CC -v 2>&1)"
 cc_family=unknown
 if fnmatch '*gcc\ version*' "$cc_ver" ; then
-cc_family=gcc
+    cc_family=gcc
 elif fnmatch '*clang\ version*' "$cc_ver" ; then
-cc_family=clang
+    cc_family=clang
 fi
 echo "$cc_family"
 
@@ -272,33 +272,33 @@ echo "$cc_family"
 # Figure out toolchain wrapper to build
 #
 if test "$wrapper" = auto -o "$wrapper" = detect ; then
-echo "#include <stdlib.h>" > "$tmpc"
-echo "#if ! __GLIBC__" >> "$tmpc"
-echo "#error no" >> "$tmpc"
-echo "#endif" >> "$tmpc"
-printf "checking for toolchain wrapper to build... "
-if test "$wrapper" = auto && ! $CC -c -o /dev/null "$tmpc" >/dev/null 2>&1 ; then
-echo "none"
-elif test "$cc_family" = gcc ; then
-gcc_wrapper=yes
-echo "gcc"
-elif test "$cc_family" = clang ; then
-clang_wrapper=yes
-echo "clang"
-else
-echo "none"
-if test "$wrapper" = detect ; then
-fail "$0: could not find an appropriate toolchain wrapper"
-fi
-fi
+    echo "#include <stdlib.h>" > "$tmpc"
+    echo "#if ! __GLIBC__" >> "$tmpc"
+    echo "#error no" >> "$tmpc"
+    echo "#endif" >> "$tmpc"
+    printf "checking for toolchain wrapper to build... "
+    if test "$wrapper" = auto && ! $CC -c -o /dev/null "$tmpc" >/dev/null 2>&1 ; then
+        echo "none"
+    elif test "$cc_family" = gcc ; then
+        gcc_wrapper=yes
+        echo "gcc"
+    elif test "$cc_family" = clang ; then
+        clang_wrapper=yes
+        echo "clang"
+    else
+        echo "none"
+        if test "$wrapper" = detect ; then
+            fail "$0: could not find an appropriate toolchain wrapper"
+        fi
+    fi
 fi
 
 if test "$gcc_wrapper" = yes ; then
-tools="$tools obj/musl-gcc"
-tool_libs="$tool_libs lib/musl-gcc.specs"
+    tools="$tools obj/musl-gcc"
+    tool_libs="$tool_libs lib/musl-gcc.specs"
 fi
 if test "$clang_wrapper" = yes ; then
-tools="$tools obj/musl-clang obj/ld.musl-clang"
+    tools="$tools obj/musl-clang obj/ld.musl-clang"
 fi
 
 #
@@ -312,24 +312,24 @@ printf "%s\n" "$target"
 # Convert to just ARCH
 #
 case "$target" in
-# Catch these early to simplify matching for 32-bit archs
-arm*) ARCH=arm ;;
-aarch64*) ARCH=aarch64 ;;
-i?86-nt32*) ARCH=nt32 ;;
-i?86*) ARCH=i386 ;;
-x86_64-x32*|x32*|x86_64*x32) ARCH=x32 ;;
-x86_64-nt64*) ARCH=nt64 ;;
-x86_64*) ARCH=x86_64 ;;
-mips64*|mipsisa64*) ARCH=mips64 ;;
-mips*) ARCH=mips ;;
-microblaze*) ARCH=microblaze ;;
-or1k*) ARCH=or1k ;;
-powerpc64*) ARCH=powerpc64 ;;
-powerpc*) ARCH=powerpc ;;
-sh[1-9bel-]*|sh|superh*) ARCH=sh ;;
-s390x*) ARCH=s390x ;;
-unknown) fail "$0: unable to detect target arch; try $0 --target=..." ;;
-*) fail "$0: unknown or unsupported target \"$target\"" ;;
+    # Catch these early to simplify matching for 32-bit archs
+    arm*) ARCH=arm ;;
+    aarch64*) ARCH=aarch64 ;;
+    i?86-nt32*) ARCH=nt32 ;;
+    i?86*) ARCH=i386 ;;
+    x86_64-x32*|x32*|x86_64*x32) ARCH=x32 ;;
+    x86_64-nt64*) ARCH=nt64 ;;
+    x86_64*) ARCH=x86_64 ;;
+    mips64*|mipsisa64*) ARCH=mips64 ;;
+    mips*) ARCH=mips ;;
+    microblaze*) ARCH=microblaze ;;
+    or1k*) ARCH=or1k ;;
+    powerpc64*) ARCH=powerpc64 ;;
+    powerpc*) ARCH=powerpc ;;
+    sh[1-9bel-]*|sh|superh*) ARCH=sh ;;
+    s390x*) ARCH=s390x ;;
+    unknown) fail "$0: unable to detect target arch; try $0 --target=..." ;;
+    *) fail "$0: unknown or unsupported target \"$target\"" ;;
 esac
 
 #
@@ -338,9 +338,9 @@ esac
 tryflag CFLAGS_C99FSE -std=c99
 tryflag CFLAGS_C99FSE -nostdinc
 tryflag CFLAGS_C99FSE -ffreestanding \
-|| tryflag CFLAGS_C99FSE -fno-builtin
+    || tryflag CFLAGS_C99FSE -fno-builtin
 tryflag CFLAGS_C99FSE -fexcess-precision=standard \
-|| { test "$ARCH" = i386 && tryflag CFLAGS_C99FSE -ffloat-store ; }
+    || { test "$ARCH" = i386 && tryflag CFLAGS_C99FSE -ffloat-store ; }
 tryflag CFLAGS_C99FSE -frounding-math
 
 #
@@ -357,11 +357,11 @@ __attribute__((__may_alias__))
 x;
 EOF
 if $CC $CFLAGS_C99FSE $CPPFLAGS $CFLAGS \
-  -c -o /dev/null "$tmpc" >/dev/null 2>&1 ; then
+    -c -o /dev/null "$tmpc" >/dev/null 2>&1 ; then
 printf "no\n"
 else
-printf "yes\n"
-CFLAGS_C99FSE="$CFLAGS_C99FSE -D__may_alias__="
+    printf "yes\n"
+    CFLAGS_C99FSE="$CFLAGS_C99FSE -D__may_alias__="
 fi
 
 #
@@ -399,12 +399,12 @@ test "$debug" = yes && CFLAGS_AUTO=-g
 #
 printf "checking whether we should preprocess assembly to add debugging information... "
 if fnmatch '-g*|*\ -g*' "$CFLAGS_AUTO $CFLAGS" &&
-   test -f "tools/add-cfi.$ARCH.awk" &&
-   printf ".file 1 \"srcfile.s\"\n.line 1\n.cfi_startproc\n.cfi_endproc" | $CC -g -x assembler -c -o /dev/null 2>/dev/null -
+    test -f "tools/add-cfi.$ARCH.awk" &&
+    printf ".file 1 \"srcfile.s\"\n.line 1\n.cfi_startproc\n.cfi_endproc" | $CC -g -x assembler -c -o /dev/null 2>/dev/null -
 then
-  ADD_CFI=yes
+    ADD_CFI=yes
 else
-  ADD_CFI=no
+    ADD_CFI=no
 fi
 printf "%s\n" "$ADD_CFI"
 
@@ -414,16 +414,16 @@ printf "%s\n" "$ADD_CFI"
 #
 printf "checking for optimization settings... "
 case "x$optimize" in
-xauto)
-if fnmatch '-O*|*\ -O*' "$CFLAGS_AUTO $CFLAGS" ; then
-printf "using provided CFLAGS\n" ;optimize=no
-else
-printf "using defaults\n" ; optimize=yes
-fi
-;;
-xsize|xnone) printf "minimize size\n" ; optimize=size ;;
-xno|x) printf "disabled\n" ; optimize=no ;;
-*) printf "custom\n" ;;
+    xauto)
+        if fnmatch '-O*|*\ -O*' "$CFLAGS_AUTO $CFLAGS" ; then
+            printf "using provided CFLAGS\n" ;optimize=no
+        else
+            printf "using defaults\n" ; optimize=yes
+        fi
+        ;;
+    xsize|xnone) printf "minimize size\n" ; optimize=size ;;
+    xno|x) printf "disabled\n" ; optimize=no ;;
+    *) printf "custom\n" ;;
 esac
 
 test "$optimize" = no || tryflag CFLAGS_AUTO -Os || tryflag CFLAGS_AUTO -O2
@@ -431,22 +431,22 @@ test "$optimize" = yes && optimize="internal,malloc,string"
 
 if fnmatch 'no|size' "$optimize" ; then :
 else
-printf "components to be optimized for speed:"
-while test "$optimize" ; do
-case "$optimize" in
-*,*) this=${optimize%%,*} optimize=${optimize#*,} ;;
-*) this=$optimize optimize=
-esac
-printf " $this"
-case "$this" in
-*/*.c) ;;
-*/*) this=$this*.c ;;
-*) this=$this/*.c ;;
-esac
-OPTIMIZE_GLOBS="$OPTIMIZE_GLOBS $this"
-done
-OPTIMIZE_GLOBS=${OPTIMIZE_GLOBS# }
-printf "\n"
+    printf "components to be optimized for speed:"
+    while test "$optimize" ; do
+        case "$optimize" in
+            *,*) this=${optimize%%,*} optimize=${optimize#*,} ;;
+            *) this=$optimize optimize=
+        esac
+        printf " $this"
+        case "$this" in
+            */*.c) ;;
+            */*) this=$this*.c ;;
+            *) this=$this/*.c ;;
+        esac
+        OPTIMIZE_GLOBS="$OPTIMIZE_GLOBS $this"
+    done
+    OPTIMIZE_GLOBS=${OPTIMIZE_GLOBS# }
+    printf "\n"
 fi
 
 # Always try -pipe
@@ -459,7 +459,7 @@ tryflag CFLAGS_AUTO -pipe
 #
 if fnmatch '-g*|*\ -g*' "$CFLAGS_AUTO $CFLAGS" ; then :
 else 
-tryflag CFLAGS_AUTO -fomit-frame-pointer
+    tryflag CFLAGS_AUTO -fomit-frame-pointer
 fi
 
 #
@@ -491,8 +491,8 @@ tryflag CFLAGS_AUTO -fdata-sections
 # check both CC and CFLAGS.
 #
 if test "$ARCH" = "i386" ; then
-fnmatch '-march=*|*\ -march=*' "$CC $CFLAGS" || tryldflag CFLAGS_AUTO -march=i486
-fnmatch '-mtune=*|*\ -mtune=*' "$CC $CFLAGS" || tryldflag CFLAGS_AUTO -mtune=generic
+    fnmatch '-march=*|*\ -march=*' "$CC $CFLAGS" || tryldflag CFLAGS_AUTO -march=i486
+    fnmatch '-mtune=*|*\ -mtune=*' "$CC $CFLAGS" || tryldflag CFLAGS_AUTO -mtune=generic
 fi
 
 #
@@ -514,24 +514,24 @@ tryflag CFLAGS_AUTO -Werror=pointer-arith
 tryflag CFLAGS_AUTO -Qunused-arguments
 
 if test "x$warnings" = xyes ; then
-tryflag CFLAGS_AUTO -Wall
-tryflag CFLAGS_AUTO -Wno-parentheses
-tryflag CFLAGS_AUTO -Wno-uninitialized
-tryflag CFLAGS_AUTO -Wno-missing-braces
-tryflag CFLAGS_AUTO -Wno-unused-value
-tryflag CFLAGS_AUTO -Wno-unused-but-set-variable
-tryflag CFLAGS_AUTO -Wno-unknown-pragmas
-tryflag CFLAGS_AUTO -Wno-pointer-to-int-cast
+    tryflag CFLAGS_AUTO -Wall
+    tryflag CFLAGS_AUTO -Wno-parentheses
+    tryflag CFLAGS_AUTO -Wno-uninitialized
+    tryflag CFLAGS_AUTO -Wno-missing-braces
+    tryflag CFLAGS_AUTO -Wno-unused-value
+    tryflag CFLAGS_AUTO -Wno-unused-but-set-variable
+    tryflag CFLAGS_AUTO -Wno-unknown-pragmas
+    tryflag CFLAGS_AUTO -Wno-pointer-to-int-cast
 fi
 
 if test "x$visibility" = xauto ; then
-# This test checks toolchain support for several things:
-# - the -include option
-# - the attributes/pragmas used in vis.h
-# - linking code that takes the address of protected symbols
-# - gcc 3.x bug that wrongly claims declarations mismatch
-printf "checking whether global visibility preinclude works... "
-cat > "$tmpc" <<EOF
+    # This test checks toolchain support for several things:
+    # - the -include option
+    # - the attributes/pragmas used in vis.h
+    # - linking code that takes the address of protected symbols
+    # - gcc 3.x bug that wrongly claims declarations mismatch
+    printf "checking whether global visibility preinclude works... "
+    cat > "$tmpc" <<EOF
 __attribute__((__visibility__("default")))
 extern struct a *const x;
 typedef struct a b;
@@ -541,29 +541,29 @@ int (*fp)(void);
 int foo(void) { }
 int bar(void) { fp = foo; return foo(); }
 EOF
-if $CC $CFLAGS_C99FSE $CPPFLAGS $CFLAGS \
-  -DSHARED -fPIC -I$srcdir/src/internal -include vis.h \
-  -nostdlib -shared -Wl,-Bsymbolic-functions \
-  -o /dev/null "$tmpc" >/dev/null 2>&1 ; then
-visibility=yes
-else
-visibility=no
-fi
-printf "%s\n" "$visibility"
+    if $CC $CFLAGS_C99FSE $CPPFLAGS $CFLAGS \
+        -DSHARED -fPIC -I$srcdir/src/internal -include vis.h \
+        -nostdlib -shared -Wl,-Bsymbolic-functions \
+        -o /dev/null "$tmpc" >/dev/null 2>&1 ; then
+        visibility=yes
+    else
+        visibility=no
+    fi
+    printf "%s\n" "$visibility"
 fi
 
 if test "x$visibility" = xyes ; then
-CFLAGS_AUTO="$CFLAGS_AUTO -include vis.h"
-CFLAGS_AUTO="${CFLAGS_AUTO# }"
+    CFLAGS_AUTO="$CFLAGS_AUTO -include vis.h"
+    CFLAGS_AUTO="${CFLAGS_AUTO# }"
 fi
 
 # Determine if the compiler produces position-independent code (PIC)
 # by default. If so, we don't need to compile separate object files
 # for libc.a and libc.so.
 if trycppif __PIC__ "$CFLAGS_C99FSE $CPPFLAGS $CFLAGS" ; then
-pic_default=yes
+    pic_default=yes
 else
-pic_default=no
+    pic_default=no
 fi
 
 # Reduce space lost to padding for alignment purposes by sorting data
@@ -599,9 +599,9 @@ tryldflag LDFLAGS_AUTO -Wl,-Bsymbolic-functions
 test -z "$LIBCC" && tryldflag LIBCC -lgcc && tryldflag LIBCC -lgcc_eh
 test -z "$LIBCC" && tryldflag LIBCC -lcompiler_rt
 test -z "$LIBCC" && try_libcc=`$CC -print-libgcc-file-name 2>/dev/null` \
-                 && tryldflag LIBCC "$try_libcc"
+    && tryldflag LIBCC "$try_libcc"
 test -z "$LIBCC" && try_libcc=`$CC -print-file-name=libpcc.a 2>/dev/null` \
-                 && tryldflag LIBCC "$try_libcc"
+    && tryldflag LIBCC "$try_libcc"
 printf "using compiler runtime libraries: %s\n" "$LIBCC"
 
 # Figure out arch variants for archs with variants
@@ -609,93 +609,93 @@ SUBARCH=
 t="$CFLAGS_C99FSE $CPPFLAGS $CFLAGS"
 
 if test "$ARCH" = "x86_64" ; then
-trycppif __ILP32__ "$t" && ARCH=x32
+    trycppif __ILP32__ "$t" && ARCH=x32
 fi
 
 if test "$ARCH" = "arm" ; then
-if trycppif __thumb2__ "$t" ; then
-tryflag CFLAGS_AUTO -Wa,-mimplicit-it=always
-tryflag CFLAGS_AUTO -Wa,-mthumb
-fi
-trycppif __ARMEB__ "$t" && SUBARCH=${SUBARCH}eb
-trycppif __ARM_PCS_VFP "$t" && SUBARCH=${SUBARCH}hf
-# Versions of clang up until at least 3.8 have the wrong constraint codes
-# for floating point operands to inline asm. Detect this so the affected
-# source files can just disable the asm.
-if test "$cc_family" = clang ; then
-printf "checking whether clang's vfp asm constraints work... "
-echo 'float f(float x) { __asm__("":"+t"(x)); return x; }' > "$tmpc"
-if $CC $CFLAGS_C99FSE $CPPFLAGS $CFLAGS -c -o /dev/null "$tmpc" >/dev/null 2>&1 ; then
-printf "yes\n"
-else
-printf "no\n"
-CFLAGS_AUTO="$CFLAGS_AUTO -DBROKEN_VFP_ASM"
-CFLAGS_AUTO="${CFLAGS_AUTO# }"
-fi
-fi
+    if trycppif __thumb2__ "$t" ; then
+        tryflag CFLAGS_AUTO -Wa,-mimplicit-it=always
+        tryflag CFLAGS_AUTO -Wa,-mthumb
+    fi
+    trycppif __ARMEB__ "$t" && SUBARCH=${SUBARCH}eb
+    trycppif __ARM_PCS_VFP "$t" && SUBARCH=${SUBARCH}hf
+    # Versions of clang up until at least 3.8 have the wrong constraint codes
+    # for floating point operands to inline asm. Detect this so the affected
+    # source files can just disable the asm.
+    if test "$cc_family" = clang ; then
+        printf "checking whether clang's vfp asm constraints work... "
+        echo 'float f(float x) { __asm__("":"+t"(x)); return x; }' > "$tmpc"
+        if $CC $CFLAGS_C99FSE $CPPFLAGS $CFLAGS -c -o /dev/null "$tmpc" >/dev/null 2>&1 ; then
+            printf "yes\n"
+        else
+            printf "no\n"
+            CFLAGS_AUTO="$CFLAGS_AUTO -DBROKEN_VFP_ASM"
+            CFLAGS_AUTO="${CFLAGS_AUTO# }"
+        fi
+    fi
 fi
 
 if test "$ARCH" = "aarch64" ; then
-trycppif __AARCH64EB__ "$t" && SUBARCH=${SUBARCH}_be
+    trycppif __AARCH64EB__ "$t" && SUBARCH=${SUBARCH}_be
 fi
 
 if test "$ARCH" = "mips" ; then
-trycppif "__mips_isa_rev >= 6" "$t" && SUBARCH=${SUBARCH}r6
-trycppif "_MIPSEL || __MIPSEL || __MIPSEL__" "$t" && SUBARCH=${SUBARCH}el
-trycppif __mips_soft_float "$t" && SUBARCH=${SUBARCH}-sf
+    trycppif "__mips_isa_rev >= 6" "$t" && SUBARCH=${SUBARCH}r6
+    trycppif "_MIPSEL || __MIPSEL || __MIPSEL__" "$t" && SUBARCH=${SUBARCH}el
+    trycppif __mips_soft_float "$t" && SUBARCH=${SUBARCH}-sf
 fi
 
 if test "$ARCH" = "mips64" ; then
-trycppif "_MIPS_SIM != _ABI64" "$t" && ARCH=mipsn32
-trycppif "__mips_isa_rev >= 6" "$t" && SUBARCH=${SUBARCH}r6
-trycppif "_MIPSEL || __MIPSEL || __MIPSEL__" "$t" && SUBARCH=${SUBARCH}el
-trycppif __mips_soft_float "$t" && SUBARCH=${SUBARCH}-sf
+    trycppif "_MIPS_SIM != _ABI64" "$t" && ARCH=mipsn32
+    trycppif "__mips_isa_rev >= 6" "$t" && SUBARCH=${SUBARCH}r6
+    trycppif "_MIPSEL || __MIPSEL || __MIPSEL__" "$t" && SUBARCH=${SUBARCH}el
+    trycppif __mips_soft_float "$t" && SUBARCH=${SUBARCH}-sf
 fi
 
 if test "$ARCH" = "powerpc" ; then
-trycppif "__NO_FPRS__ && !_SOFT_FLOAT" "$t" && fail \
-  "$0: error: compiler's floating point configuration is unsupported"
-trycppif _SOFT_FLOAT "$t" && SUBARCH=${SUBARCH}-sf
+    trycppif "__NO_FPRS__ && !_SOFT_FLOAT" "$t" && fail \
+        "$0: error: compiler's floating point configuration is unsupported"
+    trycppif _SOFT_FLOAT "$t" && SUBARCH=${SUBARCH}-sf
 fi
 
 test "$ARCH" = "microblaze" && trycppif __MICROBLAZEEL__ "$t" \
-&& SUBARCH=${SUBARCH}el
+    && SUBARCH=${SUBARCH}el
 
 if test "$ARCH" = "powerpc64" ; then
-trycppif "_CALL_ELF == 2" "$t" || fail "$0: error: unsupported powerpc64 ABI"
-trycppif __LITTLE_ENDIAN__ "$t" && SUBARCH=${SUBARCH}le
-trycppif _SOFT_FLOAT "$t" && fail "$0: error: soft-float not supported on powerpc64"
+    trycppif "_CALL_ELF == 2" "$t" || fail "$0: error: unsupported powerpc64 ABI"
+    trycppif __LITTLE_ENDIAN__ "$t" && SUBARCH=${SUBARCH}le
+    trycppif _SOFT_FLOAT "$t" && fail "$0: error: soft-float not supported on powerpc64"
 fi
 
 if test "$ARCH" = "sh" ; then
-tryflag CFLAGS_AUTO -Wa,--isa=any
-trycppif __BIG_ENDIAN__ "$t" && SUBARCH=${SUBARCH}eb
-if trycppif "__SH_FPU_ANY__ || __SH4__" "$t" ; then
-# Some sh configurations are broken and replace double with float
-# rather than using softfloat when the fpu is present but only
-# supports single precision. Reject them.
-printf "checking whether compiler's double type is IEEE double... "
-echo 'typedef char dblcheck[(int)sizeof(double)-5];' > "$tmpc"
-if $CC $CFLAGS_C99FSE $CPPFLAGS $CFLAGS -c -o /dev/null "$tmpc" >/dev/null 2>&1 ; then
-printf "yes\n"
-else
-printf "no\n"
-fail "$0: error: compiler's floating point configuration is unsupported"
-fi
-else
-SUBARCH=${SUBARCH}-nofpu
-fi
-if trycppif __SH_FDPIC__ "$t" ; then
-SUBARCH=${SUBARCH}-fdpic
-fi
+    tryflag CFLAGS_AUTO -Wa,--isa=any
+    trycppif __BIG_ENDIAN__ "$t" && SUBARCH=${SUBARCH}eb
+    if trycppif "__SH_FPU_ANY__ || __SH4__" "$t" ; then
+        # Some sh configurations are broken and replace double with float
+        # rather than using softfloat when the fpu is present but only
+        # supports single precision. Reject them.
+        printf "checking whether compiler's double type is IEEE double... "
+        echo 'typedef char dblcheck[(int)sizeof(double)-5];' > "$tmpc"
+        if $CC $CFLAGS_C99FSE $CPPFLAGS $CFLAGS -c -o /dev/null "$tmpc" >/dev/null 2>&1 ; then
+            printf "yes\n"
+        else
+            printf "no\n"
+            fail "$0: error: compiler's floating point configuration is unsupported"
+        fi
+    else
+        SUBARCH=${SUBARCH}-nofpu
+    fi
+    if trycppif __SH_FDPIC__ "$t" ; then
+        SUBARCH=${SUBARCH}-fdpic
+    fi
 fi
 
 test "$SUBARCH" \
-&& printf "configured for %s variant: %s\n" "$ARCH" "$ARCH$SUBARCH"
+    && printf "configured for %s variant: %s\n" "$ARCH" "$ARCH$SUBARCH"
 
 case "$ARCH$SUBARCH" in
-arm) ASMSUBARCH=el ;;
-*) ASMSUBARCH=$SUBARCH ;;
+    arm) ASMSUBARCH=el ;;
+    *) ASMSUBARCH=$SUBARCH ;;
 esac
 
 #
@@ -711,12 +711,12 @@ echo '#include <float.h>' > "$tmpc"
 echo '#define C(m,s) (m==LDBL_MANT_DIG && s==sizeof(long double))' >> "$tmpc"
 echo 'typedef char ldcheck[(C(53,8)||C(64,12)||C(64,16)||C(113,16))*2-1];' >> "$tmpc"
 if $CC $CFLAGS_C99FSE \
-  -I$srcdir/arch/$ARCH -I$srcdir/arch/generic -I$srcdir/include \
-  $CPPFLAGS $CFLAGS -c -o /dev/null "$tmpc" >/dev/null 2>&1 ; then
+    -I$srcdir/arch/$ARCH -I$srcdir/arch/generic -I$srcdir/include \
+    $CPPFLAGS $CFLAGS -c -o /dev/null "$tmpc" >/dev/null 2>&1 ; then
 printf "yes\n"
 else
-printf "no\n"
-fail "$0: error: unsupported long double type"
+    printf "no\n"
+    fail "$0: error: unsupported long double type"
 fi
 
 #
@@ -725,8 +725,8 @@ fi
 # early rather than producing a seriously-broken math library.
 #
 if trycppif "__FAST_MATH__" \
-  "$CFLAGS_C99FSE $CPPFLAGS $CFLAGS" ; then
-fail "$0: error: compiler has broken floating point; check CFLAGS"
+    "$CFLAGS_C99FSE $CPPFLAGS $CFLAGS" ; then
+    fail "$0: error: compiler has broken floating point; check CFLAGS"
 fi
 
 printf "creating config.mak... "
