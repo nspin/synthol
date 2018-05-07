@@ -17,7 +17,7 @@ includedir = $(prefix)/include
 libdir = $(prefix)/lib
 syslibdir = /lib
 
-SRC_DIRS = $(addprefix $(srcdir)/,src/* crt ldso)
+SRC_DIRS = $(addprefix $(srcdir)/,src/* src/compiler-rt/src crt ldso)
 BASE_GLOBS = $(addsuffix /*.c,$(SRC_DIRS))
 ARCH_GLOBS = $(addsuffix /$(ARCH)/*.[csS],$(SRC_DIRS))
 BASE_SRCS = $(sort $(wildcard $(BASE_GLOBS)))
