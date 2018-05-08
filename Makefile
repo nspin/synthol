@@ -17,7 +17,7 @@ includedir = $(prefix)/include
 libdir = $(prefix)/lib
 syslibdir = /lib
 
-SRC_DIRS = $(addprefix $(srcdir)/,src/* compiler-rt/src crt ldso)
+SRC_DIRS = $(addprefix $(srcdir)/,src/* compiler-rt/src crt crt-rt ldso)
 BASE_GLOBS = $(addsuffix /*.c,$(SRC_DIRS))
 ARCH_GLOBS = $(addsuffix /$(ARCH)/*.[csS],$(SRC_DIRS))
 BASE_SRCS = $(sort $(wildcard $(BASE_GLOBS)))
@@ -29,7 +29,7 @@ ALL_OBJS = $(addprefix obj/, $(filter-out $(REPLACED_OBJS), $(sort $(BASE_OBJS) 
 
 LIBC_OBJS = $(filter obj/src/%,$(ALL_OBJS)) $(filter obj/compiler-rt/src/%,$(ALL_OBJS))
 LDSO_OBJS = $(filter obj/ldso/%,$(ALL_OBJS:%.o=%.lo))
-CRT_OBJS = $(filter obj/crt/%,$(ALL_OBJS))
+CRT_OBJS = $(filter obj/crt/%,$(ALL_OBJS)) $(filter obj/crt-rt/%,$(ALL_OBJS))
 
 AOBJS = $(LIBC_OBJS)
 LOBJS = $(LIBC_OBJS:.o=.lo)
@@ -39,7 +39,7 @@ IMPH = $(addprefix $(srcdir)/, src/internal/stdio_impl.h src/internal/pthread_im
 
 LDFLAGS =
 LDFLAGS_AUTO =
-LIBCC = -lgcc
+LIBCC =
 CPPFLAGS =
 CFLAGS =
 CFLAGS_AUTO = -Os -pipe
@@ -60,9 +60,9 @@ GENERIC_INCLUDES = $(wildcard $(srcdir)/arch/generic/bits/*.h)
 INCLUDES = $(wildcard $(srcdir)/include/*.h $(srcdir)/include/*/*.h)
 ALL_INCLUDES = $(sort $(INCLUDES:$(srcdir)/%=%) $(GENH:obj/%=%) $(ARCH_INCLUDES:$(srcdir)/arch/$(ARCH)/%=include/%) $(GENERIC_INCLUDES:$(srcdir)/arch/generic/%=include/%))
 
-EMPTY_LIB_NAMES = m rt pthread crypt util xnet resolv dl
+EMPTY_LIB_NAMES = m rt pthread crypt util xnet resolv dl gcc_s gcc_eh gcc
 EMPTY_LIBS = $(EMPTY_LIB_NAMES:%=lib/lib%.a)
-CRT_LIBS = $(addprefix lib/,$(notdir $(CRT_OBJS)))
+CRT_LIBS = $(addprefix lib/,$(notdir $(CRT_OBJS))) lib/crtbeginT.o
 STATIC_LIBS = lib/libc.a
 SHARED_LIBS = lib/libc.so
 TOOL_LIBS = lib/musl-gcc.specs
@@ -177,6 +177,13 @@ lib/%.o: obj/crt/$(ARCH)/%.o
 
 lib/%.o: obj/crt/%.o
 	cp $< $@
+
+lib/%.o: obj/crt-rt/%.o
+	cp $< $@
+
+lib/crtbeginT.o:
+	rm -f $@
+	ln -s crtbegin.o $@
 
 lib/musl-gcc.specs: $(srcdir)/tools/musl-gcc.specs.sh config.mak
 	sh $< "$(includedir)" "$(libdir)" "$(LDSO_PATHNAME)" > $@
