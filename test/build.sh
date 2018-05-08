@@ -1,3 +1,3 @@
 #!/bin/sh
-clang hello.c -B sl/lib -I sl/include/ -L sl/lib/ -nostartfiles \
-    -Wl,-T,sl/lib/kernel.lds,sl/lib/start.o -o hello
+clang -B sl/lib -isystem sl/include -L sl/lib \
+    -Wl,-T,sl/lib/kernel.lds -o hello hello.c

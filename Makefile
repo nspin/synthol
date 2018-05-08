@@ -17,7 +17,7 @@ includedir = $(prefix)/include
 libdir = $(prefix)/lib
 syslibdir = /lib
 
-SRC_DIRS = $(addprefix $(srcdir)/,src/* compiler-rt/src crt crt-rt bootloader)
+SRC_DIRS = $(addprefix $(srcdir)/,src/* crt compiler-rt/src)
 BASE_GLOBS = $(addsuffix /*.c,$(SRC_DIRS))
 ARCH_GLOBS = $(addsuffix /$(ARCH)/*.[csS],$(SRC_DIRS))
 BASE_SRCS = $(sort $(wildcard $(BASE_GLOBS)))
@@ -28,8 +28,7 @@ REPLACED_OBJS = $(sort $(subst /$(ARCH)/,/,$(ARCH_OBJS)))
 ALL_OBJS = $(addprefix obj/, $(filter-out $(REPLACED_OBJS), $(sort $(BASE_OBJS) $(ARCH_OBJS))))
 
 LIBC_OBJS = $(filter obj/src/%,$(ALL_OBJS)) $(filter obj/compiler-rt/src/%,$(ALL_OBJS))
-CRT_OBJS = $(filter obj/crt/%,$(ALL_OBJS)) $(filter obj/crt-rt/%,$(ALL_OBJS))
-BL_OBJS = $(filter obj/bootloader/%,$(ALL_OBJS))
+CRT_OBJS = $(filter obj/crt/%,$(ALL_OBJS))
 
 AOBJS = $(LIBC_OBJS)
 GENH = obj/include/bits/alltypes.h obj/include/bits/syscall.h
@@ -64,7 +63,7 @@ EMPTY_LIBS = $(EMPTY_LIB_NAMES:%=lib/lib%.a)
 CRT_LIBS = $(addprefix lib/,$(notdir $(CRT_OBJS))) lib/crtbeginT.o
 BL_LIBS = $(addprefix lib/,$(notdir $(BL_OBJS)))
 STATIC_LIBS = lib/libc.a
-ALL_LIBS = $(CRT_LIBS) $(STATIC_LIBS) $(EMPTY_LIBS) lib/kernel.lds lib/start.o
+ALL_LIBS = $(CRT_LIBS) $(STATIC_LIBS) $(EMPTY_LIBS) lib/kernel.lds
 
 -include config.mak
 
@@ -97,9 +96,7 @@ obj/src/internal/version.h: $(wildcard $(srcdir)/VERSION $(srcdir)/.git)
 
 obj/src/internal/version.o: obj/src/internal/version.h
 
-obj/crt/crt1.o obj/crt/scrt1.o obj/crt/rcrt1.o: $(srcdir)/arch/$(ARCH)/crt_arch.h
-
-obj/crt/Scrt1.o: CFLAGS_ALL += -fPIC
+obj/crt/crt1.o: $(srcdir)/arch/$(ARCH)/crt_arch.h
 
 OPTIMIZE_SRCS = $(wildcard $(OPTIMIZE_GLOBS:%=$(srcdir)/src/%))
 $(OPTIMIZE_SRCS:$(srcdir)/%.c=obj/%.o): CFLAGS += -O3
@@ -150,17 +147,11 @@ lib/%.o: obj/crt/$(ARCH)/%.o
 lib/%.o: obj/crt/%.o
 	cp $< $@
 
-lib/%.o: obj/crt-rt/%.o
-	cp $< $@
-
 lib/crtbeginT.o:
 	rm -f $@
 	ln -s crtbegin.o $@
 
-lib/%.o: obj/bootloader/$(ARCH)/%.o
-	cp $< $@
-
-lib/kernel.lds: $(srcdir)/bootloader/$(ARCH)/kernel.lds
+lib/kernel.lds: $(srcdir)/crt/$(ARCH)/kernel.lds
 	cp $< $@
 
 $(DESTDIR)$(bindir)/%: obj/%
