@@ -17,7 +17,7 @@ includedir = $(prefix)/include
 libdir = $(prefix)/lib
 syslibdir = /lib
 
-SRC_DIRS = $(addprefix $(srcdir)/,src/* compiler-rt/src crt crt-rt)
+SRC_DIRS = $(addprefix $(srcdir)/,src/* compiler-rt/src crt crt-rt bootloader)
 BASE_GLOBS = $(addsuffix /*.c,$(SRC_DIRS))
 ARCH_GLOBS = $(addsuffix /$(ARCH)/*.[csS],$(SRC_DIRS))
 BASE_SRCS = $(sort $(wildcard $(BASE_GLOBS)))
@@ -29,6 +29,7 @@ ALL_OBJS = $(addprefix obj/, $(filter-out $(REPLACED_OBJS), $(sort $(BASE_OBJS) 
 
 LIBC_OBJS = $(filter obj/src/%,$(ALL_OBJS)) $(filter obj/compiler-rt/src/%,$(ALL_OBJS))
 CRT_OBJS = $(filter obj/crt/%,$(ALL_OBJS)) $(filter obj/crt-rt/%,$(ALL_OBJS))
+BL_OBJS = $(filter obj/bootloader/%,$(ALL_OBJS))
 
 AOBJS = $(LIBC_OBJS)
 GENH = obj/include/bits/alltypes.h obj/include/bits/syscall.h
@@ -44,7 +45,7 @@ CFLAGS_AUTO = -Os -pipe
 CFLAGS_C99FSE = -std=c99 -ffreestanding -nostdinc 
 
 CFLAGS_ALL = $(CFLAGS_C99FSE)
-CFLAGS_ALL += -D_XOPEN_SOURCE=700 -I$(srcdir)/arch/$(ARCH) -I$(srcdir)/arch/generic -Iobj/src/internal -I$(srcdir)/src/internal -Iobj/include -I$(srcdir)/include
+CFLAGS_ALL += -D_XOPEN_SOURCE=700 -I$(srcdir)/arch/$(ARCH) -I$(srcdir)/arch/generic -Iobj/src/internal -I$(srcdir)/src/internal -Iobj/include -I$(srcdir)/include -I$(srcdir)/bootloader/$(ARCH)
 CFLAGS_ALL += $(CPPFLAGS) $(CFLAGS_AUTO) $(CFLAGS)
 
 LDFLAGS_ALL = $(LDFLAGS_AUTO) $(LDFLAGS)
@@ -61,8 +62,9 @@ ALL_INCLUDES = $(sort $(INCLUDES:$(srcdir)/%=%) $(GENH:obj/%=%) $(ARCH_INCLUDES:
 EMPTY_LIB_NAMES = m rt pthread crypt util xnet resolv dl gcc_s gcc_eh gcc
 EMPTY_LIBS = $(EMPTY_LIB_NAMES:%=lib/lib%.a)
 CRT_LIBS = $(addprefix lib/,$(notdir $(CRT_OBJS))) lib/crtbeginT.o
+BL_LIBS = $(addprefix lib/,$(notdir $(BL_OBJS)))
 STATIC_LIBS = lib/libc.a
-ALL_LIBS = $(CRT_LIBS) $(STATIC_LIBS) $(EMPTY_LIBS)
+ALL_LIBS = $(CRT_LIBS) $(STATIC_LIBS) $(EMPTY_LIBS) lib/kernel.lds lib/start.o
 
 -include config.mak
 
@@ -155,6 +157,12 @@ lib/crtbeginT.o:
 	rm -f $@
 	ln -s crtbegin.o $@
 
+lib/%.o: obj/bootloader/$(ARCH)/%.o
+	cp $< $@
+
+lib/kernel.lds: $(srcdir)/bootloader/$(ARCH)/kernel.lds
+	cp $< $@
+
 $(DESTDIR)$(bindir)/%: obj/%
 	$(INSTALL) -D $< $@
 
@@ -178,12 +186,6 @@ install-libs: $(ALL_LIBS:lib/%=$(DESTDIR)$(libdir)/%)
 install-headers: $(ALL_INCLUDES:include/%=$(DESTDIR)$(includedir)/%)
 
 install: install-libs install-headers
-
-musl-git-%.tar.gz: .git
-	 git --git-dir=$(srcdir)/.git archive --format=tar.gz --prefix=$(patsubst %.tar.gz,%,$@)/ -o $@ $(patsubst musl-git-%.tar.gz,%,$@)
-
-musl-%.tar.gz: .git
-	 git --git-dir=$(srcdir)/.git archive --format=tar.gz --prefix=$(patsubst %.tar.gz,%,$@)/ -o $@ v$(patsubst musl-%.tar.gz,%,$@)
 
 endif
 
