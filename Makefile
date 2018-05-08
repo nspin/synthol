@@ -62,12 +62,7 @@ EMPTY_LIB_NAMES = m rt pthread crypt util xnet resolv dl gcc_s gcc_eh gcc
 EMPTY_LIBS = $(EMPTY_LIB_NAMES:%=lib/lib%.a)
 CRT_LIBS = $(addprefix lib/,$(notdir $(CRT_OBJS))) lib/crtbeginT.o
 STATIC_LIBS = lib/libc.a
-TOOL_LIBS = lib/musl-gcc.specs
-ALL_LIBS = $(CRT_LIBS) $(STATIC_LIBS) $(EMPTY_LIBS) $(TOOL_LIBS)
-ALL_TOOLS = obj/musl-gcc
-
-WRAPCC_GCC = gcc
-WRAPCC_CLANG = clang
+ALL_LIBS = $(CRT_LIBS) $(STATIC_LIBS) $(EMPTY_LIBS)
 
 -include config.mak
 
@@ -79,11 +74,11 @@ all:
 
 else
 
-all: $(ALL_LIBS) $(ALL_TOOLS)
+all: $(ALL_LIBS)
 
-OBJ_DIRS = $(sort $(patsubst %/,%,$(dir $(ALL_LIBS) $(ALL_TOOLS) $(ALL_OBJS) $(GENH) $(GENH_INT))) obj/include)
+OBJ_DIRS = $(sort $(patsubst %/,%,$(dir $(ALL_LIBS) $(ALL_OBJS) $(GENH) $(GENH_INT))) obj/include)
 
-$(ALL_LIBS) $(ALL_TOOLS) $(ALL_OBJS) $(GENH) $(GENH_INT): | $(OBJ_DIRS)
+$(ALL_LIBS) $(ALL_OBJS) $(GENH) $(GENH_INT): | $(OBJ_DIRS)
 
 $(OBJ_DIRS):
 	mkdir -p $@
@@ -160,9 +155,6 @@ lib/crtbeginT.o:
 	rm -f $@
 	ln -s crtbegin.o $@
 
-lib/musl-gcc.specs: $(srcdir)/tools/musl-gcc.specs.sh config.mak
-	sh $< "$(includedir)" "$(libdir)" > $@
-
 $(DESTDIR)$(bindir)/%: obj/%
 	$(INSTALL) -D $< $@
 
@@ -185,9 +177,7 @@ install-libs: $(ALL_LIBS:lib/%=$(DESTDIR)$(libdir)/%)
 
 install-headers: $(ALL_INCLUDES:include/%=$(DESTDIR)$(includedir)/%)
 
-install-tools: $(ALL_TOOLS:obj/%=$(DESTDIR)$(bindir)/%)
-
-install: install-libs install-headers install-tools
+install: install-libs install-headers
 
 musl-git-%.tar.gz: .git
 	 git --git-dir=$(srcdir)/.git archive --format=tar.gz --prefix=$(patsubst %.tar.gz,%,$@)/ -o $@ $(patsubst musl-git-%.tar.gz,%,$@)
@@ -203,4 +193,4 @@ clean:
 distclean: clean
 	rm -f config.mak
 
-.PHONY: all clean install install-libs install-headers install-tools
+.PHONY: all clean install install-libs install-headers
