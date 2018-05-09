@@ -208,7 +208,7 @@ ENTRY(failsafe_callback)
 
 #if __XEN_LATEST_INTERFACE_VERSION__ >= 0x00030205
     #include <xen/elfnote.h>
-    #include "elfnote.h"
+    #include <linux/elfnote.h>
     ELFNOTE(Xen, XEN_ELFNOTE_GUEST_OS       , .asciz "synthol"      )
     ELFNOTE(Xen, XEN_ELFNOTE_XEN_VERSION    , .asciz "xen-3.0"      )
     ELFNOTE(Xen, XEN_ELFNOTE_VIRT_BASE      , .long  0x00400000     )
