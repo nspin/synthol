@@ -5,13 +5,14 @@
 /* - terms and conditions. */
 /* Author: Andrew Tolmach */
 /* BANNEREND */
+
 OUTPUT_FORMAT("elf64-x86-64", "elf64-x86-64", "elf64-x86-64")
 OUTPUT_ARCH(i386:x86-64)
 ENTRY(_start)
 SECTIONS
 {
   /* Leave the first 4MB free, so that NULL ptrs etc can be caught. */
-  . = 0x00400000;         /*   Probably good to make this 4MB aligned for Xen */
+  . = 0x00400000;         /* Probably good to make this 4MB aligned for Xen */
   _text = .;		      /* Text and read-only data */
   .text : {
 	*(.text)
@@ -23,7 +24,7 @@ SECTIONS
 
   .rodata : { *(.rodata) *(.rodata.*) }
 
-  .data : {			/* Data */
+  .data : {			    /* Data */
 	*(.data)
 	CONSTRUCTORS
 	}
@@ -40,9 +41,7 @@ SECTIONS
   .data.cacheline_aligned : { *(.data.cacheline_aligned) }
 
   __bss_start = .;		/* BSS */
-  .bss : {
-	*(.bss)
-	}
+  .bss : { *(.bss) }
 
   _end = . ;
 
@@ -51,17 +50,17 @@ SECTIONS
 
   /* Sections to be discarded */
   /DISCARD/ : {
-	*(.text.exit)
-	*(.data.exit)
-	*(.exitcall.exit)
+	*( .text.exit     )
+	*( .data.exit     )
+	*( .exitcall.exit )
 	}
 
   /* Stabs debugging sections.  */
-  .stab 0 : { *(.stab) }
-  .stabstr 0 : { *(.stabstr) }
-  .stab.excl 0 : { *(.stab.excl) }
-  .stab.exclstr 0 : { *(.stab.exclstr) }
-  .stab.index 0 : { *(.stab.index) }
-  .stab.indexstr 0 : { *(.stab.indexstr) }
-  .comment 0 : { *(.comment) }
+  .stab          0 : { *( .stab          ) }
+  .stabstr       0 : { *( .stabstr       ) }
+  .stab.excl     0 : { *( .stab.excl     ) }
+  .stab.exclstr  0 : { *( .stab.exclstr  ) }
+  .stab.index    0 : { *( .stab.index    ) }
+  .stab.indexstr 0 : { *( .stab.indexstr ) }
+  .comment       0 : { *( .comment       ) }
 }
