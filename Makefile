@@ -1,23 +1,20 @@
 #
-# Makefile for musl (requires GNU make)
+# Makefile for synthol (requires GNU make)
 #
 # This is how simple every makefile should be...
 # No, I take that back - actually most should be less than half this size.
 #
-# Use config.mak to override any of the following variables.
+# Use config.mk to override any of the following variables.
 # Do not make changes here.
 #
 
 srcdir = .
-exec_prefix = /usr/local
-bindir = $(exec_prefix)/bin
 
-prefix = /usr/local/musl
+prefix = /usr/local/synthol
 includedir = $(prefix)/include
 libdir = $(prefix)/lib
-syslibdir = /lib
 
-SRC_DIRS = $(addprefix $(srcdir)/,src/* crt compiler-rt/src)
+SRC_DIRS = $(addprefix $(srcdir)/,src/* crt compiler-rt/src synthol-src)
 BASE_GLOBS = $(addsuffix /*.c,$(SRC_DIRS))
 ARCH_GLOBS = $(addsuffix /$(ARCH)/*.[csS],$(SRC_DIRS))
 BASE_SRCS = $(sort $(wildcard $(BASE_GLOBS)))
@@ -27,7 +24,7 @@ ARCH_OBJS = $(patsubst $(srcdir)/%,%.o,$(basename $(ARCH_SRCS)))
 REPLACED_OBJS = $(sort $(subst /$(ARCH)/,/,$(ARCH_OBJS)))
 ALL_OBJS = $(addprefix obj/, $(filter-out $(REPLACED_OBJS), $(sort $(BASE_OBJS) $(ARCH_OBJS))))
 
-LIBC_OBJS = $(filter obj/src/%,$(ALL_OBJS)) $(filter obj/compiler-rt/src/%,$(ALL_OBJS))
+LIBC_OBJS = $(filter obj/src/%,$(ALL_OBJS)) $(filter obj/compiler-rt/src/%,$(ALL_OBJS)) $(filter obj/synthol-src/%,$(ALL_OBJS))
 CRT_OBJS = $(filter obj/crt/%,$(ALL_OBJS))
 
 AOBJS = $(LIBC_OBJS)
@@ -41,10 +38,10 @@ LIBCC =
 CPPFLAGS =
 CFLAGS =
 CFLAGS_AUTO = -Os -pipe
-CFLAGS_C99FSE = -std=c99 -ffreestanding -nostdinc 
+CFLAGS_C99FSE = -ffreestanding -nostdinc # -std=c99
 
 CFLAGS_ALL = $(CFLAGS_C99FSE)
-CFLAGS_ALL += -D_XOPEN_SOURCE=700 -I$(srcdir)/arch/$(ARCH) -I$(srcdir)/arch/generic -Iobj/src/internal -I$(srcdir)/src/internal -Iobj/include -I$(srcdir)/include -I$(srcdir)/third-party-include
+CFLAGS_ALL += -D_XOPEN_SOURCE=700 -I$(srcdir)/arch/$(ARCH) -I$(srcdir)/arch/generic -Iobj/src/internal -I$(srcdir)/src/internal -Iobj/include -I$(srcdir)/include -I$(srcdir)/synthol-include/$(arch) -I$(srcdir)/synthol-include -I$(srcdir)/third-party-include
 CFLAGS_ALL += $(CPPFLAGS) $(CFLAGS_AUTO) $(CFLAGS)
 
 LDFLAGS_ALL = $(LDFLAGS_AUTO) $(LDFLAGS)
@@ -53,9 +50,9 @@ AR      = $(CROSS_COMPILE)ar
 RANLIB  = $(CROSS_COMPILE)ranlib
 INSTALL = $(srcdir)/tools/install.sh
 
-ARCH_INCLUDES = $(wildcard $(srcdir)/arch/$(ARCH)/bits/*.h)
+ARCH_INCLUDES = $(wildcard $(srcdir)/arch/$(ARCH)/bits/*.h $(srcdir)/synthol-include/synthol/$(ARCH)/*.h)
 GENERIC_INCLUDES = $(wildcard $(srcdir)/arch/generic/bits/*.h)
-INCLUDES = $(wildcard $(srcdir)/include/*.h $(srcdir)/include/*/*.h)
+INCLUDES = $(wildcard $(srcdir)/include/*.h $(srcdir)/include/*/*.h $(srcdir)/synthol-include/synthol/*.h)
 ALL_INCLUDES = $(sort $(INCLUDES:$(srcdir)/%=%) $(GENH:obj/%=%) $(ARCH_INCLUDES:$(srcdir)/arch/$(ARCH)/%=include/%) $(GENERIC_INCLUDES:$(srcdir)/arch/generic/%=include/%))
 
 EMPTY_LIB_NAMES = m gcc gcc_s
@@ -64,12 +61,12 @@ CRT_LIBS = $(addprefix lib/,$(notdir $(CRT_OBJS))) lib/crtbeginT.o
 STATIC_LIBS = lib/libc.a
 ALL_LIBS = $(CRT_LIBS) $(STATIC_LIBS) $(EMPTY_LIBS) lib/kernel.lds
 
--include config.mak
+-include config.mk
 
 ifeq ($(ARCH),)
 
 all:
-	@echo "Please set ARCH in config.mak before running make."
+	@echo "Please set ARCH in config.mk before running make."
 	@exit 1
 
 else
@@ -153,9 +150,6 @@ lib/crtbeginT.o:
 lib/kernel.lds: $(srcdir)/crt/$(ARCH)/kernel.lds
 	cp $< $@
 
-$(DESTDIR)$(bindir)/%: obj/%
-	$(INSTALL) -D $< $@
-
 $(DESTDIR)$(libdir)/%: lib/%
 	$(INSTALL) -D -m 644 $< $@
 
@@ -183,6 +177,6 @@ clean:
 	rm -rf obj lib
 
 distclean: clean
-	rm -f config.mak
+	rm -f config.mk
 
 .PHONY: all clean install install-libs install-headers
