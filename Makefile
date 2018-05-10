@@ -1,36 +1,64 @@
 #
 # Makefile for synthol (requires GNU make)
 #
-# This is how simple every makefile should be...
-# No, I take that back - actually most should be less than half this size.
-#
 # Use config.mk to override any of the following variables.
 # Do not make changes here.
 #
+# Figure 1. The idea behind this file
+#
+#      | . . . .
+#   my |          .
+# mood |           .
+#      |              . . . . .
+#      + -----------------------
+#        complexity of Makefile
 
-srcdir = .
-
-prefix = /usr/local/synthol
+srcdir     = .
+prefix     = /usr/local/synthol
 includedir = $(prefix)/include
-libdir = $(prefix)/lib
+libdir     = $(prefix)/lib
 
-SRC_DIRS = $(addprefix $(srcdir)/,src/* crt compiler-rt/src synthol-src)
-BASE_GLOBS = $(addsuffix /*.c,$(SRC_DIRS))
-ARCH_GLOBS = $(addsuffix /$(ARCH)/*.[csS],$(SRC_DIRS))
-BASE_SRCS = $(sort $(wildcard $(BASE_GLOBS)))
-ARCH_SRCS = $(sort $(wildcard $(ARCH_GLOBS)))
-BASE_OBJS = $(patsubst $(srcdir)/%,%.o,$(basename $(BASE_SRCS)))
-ARCH_OBJS = $(patsubst $(srcdir)/%,%.o,$(basename $(ARCH_SRCS)))
-REPLACED_OBJS = $(sort $(subst /$(ARCH)/,/,$(ARCH_OBJS)))
-ALL_OBJS = $(addprefix obj/, $(filter-out $(REPLACED_OBJS), $(sort $(BASE_OBJS) $(ARCH_OBJS))))
+src_dirs  = $(addprefix $(srcdir)/, musl/src/* compiler-rt/src synthol/src crt)
+base_srcs = $(sort $(wildcard $(addsuffix /*.c, $(src_dirs))))
+arch_srcs = $(sort $(wildcard $(addsuffix /$(ARCH)/*.[csS], $(src_dirs))))
+all_objs  = $(sort $(patsubst $(srcdir)/%, obj/%.o, $(basename $(base_srcs) $(arch_srcs))))
+lib_objs  = $(filter-out obj/crt/%, $(all_objs))
+crt_objs  = $(filter obj/crt/%, $(all_objs))
 
-LIBC_OBJS = $(filter obj/src/%,$(ALL_OBJS)) $(filter obj/compiler-rt/src/%,$(ALL_OBJS)) $(filter obj/synthol-src/%,$(ALL_OBJS))
-CRT_OBJS = $(filter obj/crt/%,$(ALL_OBJS))
+nontriv_lib_prefixes = c
+triv_lib_prefixes    = m gcc gcc_s
+nontriv_lib_names    = $(nontriv_lib_prefixes:%=lib%.a)
+triv_lib_names       = $(triv_lib_prefixes:%=lib%.a)
+crt_lib_names        = $(notdir $(crt_objs))
+all_lib_names        = $(nontriv_lib_names) $(triv_lib_names) $(crt_lib_names) crtbeginT.o kernel.lds
+all_libs             = $(addprefix lib/, $(all_lib_names))
 
-AOBJS = $(LIBC_OBJS)
-GENH = obj/include/bits/alltypes.h obj/include/bits/syscall.h
-GENH_INT = obj/src/internal/version.h
-IMPH = $(addprefix $(srcdir)/, src/internal/stdio_impl.h src/internal/pthread_impl.h src/internal/locale_impl.h src/internal/libc.h)
+musl_gen_hdrs_ext = obj/musl/include/bits/alltypes.h obj/musl/include/bits/syscall.h
+musl_gen_hdrs_int = obj/musl/src/internal/version.h
+musl_impl_hdrs    = $(addprefix $(srcdir)/src/internal/, stdio_impl.h pthread_impl.h locale_impl.h libc.h)
+src_hdrs          = $(wildcard $(addsuffix *.h, $(src_dirs)))
+
+musl_inc_hdrs        = $(wildcard $(patsubst %, $(srcdir)/musl/include/%.h, * */* */*/*))
+musl_arch_inc_hdrs   = $(wildcard $(patsubst %, $(srcdir)/musl/arch/$(ARCH)/%.h, * */* */*/*))
+musl_hcra_inc_hdrs   = $(wildcard $(patsubst %, $(srcdir)/musl/arch/generic/%.h, * */* */*/*))
+synth_inc_hdrs       = $(wildcard $(patsubst %, $(srcdir)/synthol/include/%.h, * */* */*/*))
+synth_arch_incs_hdrs = $(wildcard $(patsubst %, $(srcdir)/synthol/arch/$(ARCH)/%.h, * */* */*/*))
+all_inc_hdrs         = $(sort $(musl_inc_hdrs) $(musl_arch_inc_hdrs) $(musl_hcra_inc_hdrs) $(musl_gen_hdrs_ext) \
+					          $(synth_inc_hdrs) $(synth_arch_incs_hdrs) )
+
+all_hdrs             = $(sort $(all_inc_hdrs) $(musl_gen_hdrs_int) $(src_hdrs))
+volatile_hdrs        = $(all_hdrs) # TODO(nspin)
+
+all_include_names = $(sort \
+	$(musl_inc_hdrs:$(srcdir)/musl/include/%=%) \
+	$(musl_arch_inc_hdrs:$(srcdir)/musl/arch/$(ARCH)/%=%) \
+	$(musl_hcra_inc_hdrs:$(srcdir)/musl/arch/generic/%=%) \
+	$(synth_inc_hdrs:$(srcdir)/synthol/include/%=%) \
+	$(synth_arch_incs_hdrs:$(srcdir)/synthol/arch/$(ARCH)/%=%) \
+	bits/alltypes.h bits/syscall.h )
+
+install_lib     = $(addprefix $(DESTDIR)$(libdir)/, $(all_lib_names))
+install_include = $(addprefix $(DESTDIR)$(includedir)/, $(all_include_names))
 
 LDFLAGS =
 LDFLAGS_AUTO =
@@ -38,10 +66,13 @@ LIBCC =
 CPPFLAGS =
 CFLAGS =
 CFLAGS_AUTO = -Os -pipe
-CFLAGS_C99FSE = -ffreestanding -nostdinc # -std=c99
+CFLAGS_C99FSE = -ffreestanding -nostdinc -std=c99
 
 CFLAGS_ALL = $(CFLAGS_C99FSE)
-CFLAGS_ALL += -D_XOPEN_SOURCE=700 -I$(srcdir)/arch/$(ARCH) -I$(srcdir)/arch/generic -Iobj/src/internal -I$(srcdir)/src/internal -Iobj/include -I$(srcdir)/include -I$(srcdir)/synthol-include/$(arch) -I$(srcdir)/synthol-include -I$(srcdir)/third-party-include
+CFLAGS_ALL += -D_XOPEN_SOURCE=700
+CFLAGS_ALL += -I$(srcdir)/musl/arch/$(ARCH) -I$(srcdir)/musl/arch/generic
+CFLAGS_ALL += -Iobj/musl/src/internal -I$(srcdir)/musl/src/internal -Iobj/musl/include -I$(srcdir)/musl/include
+CFLAGS_ALL += -I$(srcdir)/synthol/include -I$(srcdir)/synthol/arch/$(ARCH)
 CFLAGS_ALL += $(CPPFLAGS) $(CFLAGS_AUTO) $(CFLAGS)
 
 LDFLAGS_ALL = $(LDFLAGS_AUTO) $(LDFLAGS)
@@ -50,16 +81,6 @@ AR      = $(CROSS_COMPILE)ar
 RANLIB  = $(CROSS_COMPILE)ranlib
 INSTALL = $(srcdir)/tools/install.sh
 
-ARCH_INCLUDES = $(wildcard $(srcdir)/arch/$(ARCH)/bits/*.h $(srcdir)/synthol-include/synthol/$(ARCH)/*.h)
-GENERIC_INCLUDES = $(wildcard $(srcdir)/arch/generic/bits/*.h)
-INCLUDES = $(wildcard $(srcdir)/include/*.h $(srcdir)/include/*/*.h $(srcdir)/synthol-include/synthol/*.h)
-ALL_INCLUDES = $(sort $(INCLUDES:$(srcdir)/%=%) $(GENH:obj/%=%) $(ARCH_INCLUDES:$(srcdir)/arch/$(ARCH)/%=include/%) $(GENERIC_INCLUDES:$(srcdir)/arch/generic/%=include/%))
-
-EMPTY_LIB_NAMES = m gcc gcc_s
-EMPTY_LIBS = $(EMPTY_LIB_NAMES:%=lib/lib%.a)
-CRT_LIBS = $(addprefix lib/,$(notdir $(CRT_OBJS))) lib/crtbeginT.o
-STATIC_LIBS = lib/libc.a
-ALL_LIBS = $(CRT_LIBS) $(STATIC_LIBS) $(EMPTY_LIBS) lib/kernel.lds
 
 -include config.mk
 
@@ -71,28 +92,26 @@ all:
 
 else
 
-all: $(ALL_LIBS)
+all: $(all_libs)
 
-OBJ_DIRS = $(sort $(patsubst %/,%,$(dir $(ALL_LIBS) $(ALL_OBJS) $(GENH) $(GENH_INT))) obj/include)
+obj_dirs = $(sort $(dir $(all_libs) $(all_objs) $(musl_gen_hdrs_ext) $(musl_gen_hdrs_int)))
 
-$(ALL_LIBS) $(ALL_OBJS) $(GENH) $(GENH_INT): | $(OBJ_DIRS)
+$(all_libs) $(all_objs) $(all_libs) $(all_objs) $(musl_gen_hdrs_ext) $(musl_gen_hdrs_int): | $(obj_dirs)
 
-$(OBJ_DIRS):
+$(obj_dirs):
 	mkdir -p $@
 
-obj/include/bits/alltypes.h: $(srcdir)/arch/$(ARCH)/bits/alltypes.h.in $(srcdir)/include/alltypes.h.in $(srcdir)/tools/mkalltypes.sed
-	sed -f $(srcdir)/tools/mkalltypes.sed $(srcdir)/arch/$(ARCH)/bits/alltypes.h.in $(srcdir)/include/alltypes.h.in > $@
+obj/musl/include/bits/alltypes.h: $(srcdir)/musl/arch/$(ARCH)/bits/alltypes.h.in $(srcdir)/musl/include/alltypes.h.in $(srcdir)/tools/mkalltypes.sed
+	sed -f $(srcdir)/tools/mkalltypes.sed $(srcdir)/musl/arch/$(ARCH)/bits/alltypes.h.in $(srcdir)/musl/include/alltypes.h.in > $@
 
-obj/include/bits/syscall.h: $(srcdir)/arch/$(ARCH)/bits/syscall.h.in
+obj/musl/include/bits/syscall.h: $(srcdir)/musl/arch/$(ARCH)/bits/syscall.h.in
 	cp $< $@
 	sed -n -e s/__NR_/SYS_/p < $< >> $@
 
-obj/src/internal/version.h: $(wildcard $(srcdir)/VERSION $(srcdir)/.git)
-	printf '#define VERSION "%s"\n' "$$(cd $(srcdir); sh tools/version.sh)" > $@
+obj/musl/src/internal/version.h: $(wildcard $(srcdir)/VERSION $(srcdir)/.git)
+	printf '#define VERSION "%s"\n' "$$(cd $(srcdir)/musl; sh tools/version.sh)" > $@
 
 obj/src/internal/version.o: obj/src/internal/version.h
-
-obj/crt/crt1.o: $(srcdir)/arch/$(ARCH)/crt_arch.h
 
 OPTIMIZE_SRCS = $(wildcard $(OPTIMIZE_GLOBS:%=$(srcdir)/src/%))
 $(OPTIMIZE_SRCS:$(srcdir)/%.c=obj/%.o): CFLAGS += -O3
@@ -101,11 +120,11 @@ MEMOPS_SRCS = src/string/memcpy.c src/string/memmove.c src/string/memcmp.c src/s
 $(MEMOPS_SRCS:%.c=obj/%.o): CFLAGS_ALL += $(CFLAGS_MEMOPS)
 
 NOSSP_SRCS = $(wildcard crt/*.c) \
-	src/env/__libc_start_main.c src/env/__init_tls.c \
-	src/env/__stack_chk_fail.c \
-	src/thread/__set_thread_area.c src/thread/$(ARCH)/__set_thread_area.c \
-	src/string/memset.c src/string/$(ARCH)/memset.c \
-	src/string/memcpy.c src/string/$(ARCH)/memcpy.c \
+	musl/src/env/__libc_start_main.c musl/src/env/__init_tls.c \
+	musl/src/env/__stack_chk_fail.c \
+	musl/src/thread/__set_thread_area.c musl/src/thread/$(ARCH)/__set_thread_area.c \
+	musl/src/string/memset.c musl/src/string/$(ARCH)/memset.c \
+	musl/src/string/memcpy.c musl/src/string/$(ARCH)/memcpy.c \
 $(NOSSP_SRCS:%.c=obj/%.o): CFLAGS_ALL += $(CFLAGS_NOSSP)
 
 $(CRT_OBJS): CFLAGS_ALL += -DCRT
@@ -119,57 +138,62 @@ else
 	AS_CMD = $(CC_CMD)
 endif
 
-obj/%.o: $(srcdir)/%.s
+obj/%.o: $(srcdir)/%.s $(volatile_hdrs)
 	$(AS_CMD)
 
-obj/%.o: $(srcdir)/%.S
+obj/%.o: $(srcdir)/%.S $(volatile_hdrs)
 	$(CC_CMD)
 
-obj/%.o: $(srcdir)/%.c $(GENH) $(IMPH)
+obj/%.o: $(srcdir)/%.c $(volatile_hdrs)
 	$(CC_CMD)
 
-lib/libc.a: $(AOBJS)
+lib/libc.a: $(lib_objs)
 	rm -f $@
-	$(AR) rc $@ $(AOBJS)
+	$(AR) rc $@ $(lib_objs)
 	$(RANLIB) $@
 
-$(EMPTY_LIBS):
+$(addprefix lib/, $(triv_lib_names)):
 	rm -f $@
 	$(AR) rc $@
-
-lib/%.o: obj/crt/$(ARCH)/%.o
-	cp $< $@
-
-lib/%.o: obj/crt/%.o
-	cp $< $@
-
-lib/crtbeginT.o:
-	rm -f $@
-	ln -s crtbegin.o $@
-
-lib/kernel.lds: $(srcdir)/crt/$(ARCH)/kernel.lds
-	cp $< $@
 
 $(DESTDIR)$(libdir)/%: lib/%
 	$(INSTALL) -D -m 644 $< $@
 
-$(DESTDIR)$(includedir)/bits/%: $(srcdir)/arch/$(ARCH)/bits/%
+$(DESTDIR)$(libdir)/%.o: obj/crt/%.o
 	$(INSTALL) -D -m 644 $< $@
 
-$(DESTDIR)$(includedir)/bits/%: $(srcdir)/arch/generic/bits/%
+$(DESTDIR)$(libdir)/%.o: obj/crt/$(ARCH)/%.o
 	$(INSTALL) -D -m 644 $< $@
 
-$(DESTDIR)$(includedir)/bits/%: obj/include/bits/%
+$(DESTDIR)$(libdir)/crtbeginT.o:
+	ln -s crtbegin.o $@
+
+$(DESTDIR)$(libdir)/kernel.lds: $(srcdir)/crt/$(ARCH)/kernel.lds
 	$(INSTALL) -D -m 644 $< $@
 
-$(DESTDIR)$(includedir)/%: $(srcdir)/include/%
+$(DESTDIR)$(includedir)/%: $(srcdir)/synthol/include/%
 	$(INSTALL) -D -m 644 $< $@
 
-install-libs: $(ALL_LIBS:lib/%=$(DESTDIR)$(libdir)/%)
+$(DESTDIR)$(includedir)/%: $(srcdir)/musl/include/%
+	$(INSTALL) -D -m 644 $< $@
 
-install-headers: $(ALL_INCLUDES:include/%=$(DESTDIR)$(includedir)/%)
+$(DESTDIR)$(includedir)/%: $(srcdir)/musl/arch/$(ARCH)/%
+	$(INSTALL) -D -m 644 $< $@
 
-install: install-libs install-headers
+$(DESTDIR)$(includedir)/bits/%: obj/musl/include/bits/%
+	$(INSTALL) -D -m 644 $< $@
+
+$(DESTDIR)$(includedir)/bits/%: $(srcdir)/musl/arch/generic/bits/%
+	$(INSTALL) -D -m 644 $< $@
+
+$(DESTDIR)$(includedir)/bits/%: $(srcdir)/musl/arch/$(ARCH)/bits/%
+	$(INSTALL) -D -m 644 $< $@
+
+install-lib: $(install_lib)
+
+install-include: $(install_include)
+
+install: install-lib install-include
 
 endif
 
@@ -179,4 +203,4 @@ clean:
 distclean: clean
 	rm -f config.mk
 
-.PHONY: all clean install install-libs install-headers
+.PHONY: all clean distclean install install-lib install-include

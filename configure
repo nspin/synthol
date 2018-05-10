@@ -25,12 +25,9 @@ System types:
   --build=BUILD           build system type; used only to infer cross-compiling
 
 Optional features:
-  --enable-optimize=...   optimize listed components for speed over size [auto]
   --enable-debug          build with debugging information [disabled]
   --enable-warnings       build with recommended warnings flags [disabled]
   --enable-visibility     use global visibility options to optimize PIC [no]
-  --enable-wrapper=...    build given musl toolchain wrapper [auto]
-  --disable-static        inhibit building static library [enabled]
 
 Some influential environment variables:
   CC                      C compiler command [detected]
@@ -116,23 +113,17 @@ CFLAGS_NOSSP=
 CFLAGS_TRY=
 LDFLAGS_AUTO=
 LDFLAGS_TRY=
-OPTIMIZE_GLOBS=
 srcdir=
-prefix=/usr/local/musl
+prefix=/usr/local/synthol
 libdir='$(prefix)/lib'
 includedir='$(prefix)/include'
 tools=
 tool_libs=
 build=
 target=
-optimize=auto
 debug=no
 warnings=no
 visibility=no
-static=yes
-wrapper=auto
-gcc_wrapper=no
-clang_wrapper=no
 
 for arg ; do
     case "$arg" in
@@ -141,11 +132,6 @@ for arg ; do
         --prefix=*) prefix=${arg#*=} ;;
         --libdir=*) libdir=${arg#*=} ;;
         --includedir=*) includedir=${arg#*=} ;;
-        --enable-static|--enable-static=yes) static=yes ;;
-        --disable-static|--enable-static=no) static=no ;;
-        --enable-optimize) optimize=yes ;;
-        --enable-optimize=*) optimize=${arg#*=} ;;
-        --disable-optimize) optimize=no ;;
         --enable-debug|--enable-debug=yes) debug=yes ;;
         --disable-debug|--enable-debug=no) debug=no ;;
         --enable-warnings|--enable-warnings=yes) warnings=yes ;;
@@ -153,13 +139,6 @@ for arg ; do
         --enable-visibility=auto) visibility=auto ;;
         --enable-visibility|--enable-visibility=yes) visibility=yes ;;
         --disable-visibility|--enable-visibility=no) visibility=no ;;
-        --enable-wrapper|--enable-wrapper=yes) wrapper=detect ;;
-        --enable-wrapper=all) wrapper=yes ; gcc_wrapper=yes ; clang_wrapper=yes ;;
-        --enable-wrapper=gcc) wrapper=yes ; gcc_wrapper=yes ;;
-        --enable-wrapper=clang) wrapper=yes ; clang_wrapper=yes ;;
-        --disable-wrapper|--enable-wrapper=no) wrapper=no ;;
-        --enable-gcc-wrapper|--enable-gcc-wrapper=yes) wrapper=yes ; gcc_wrapper=yes ;;
-        --disable-gcc-wrapper|--enable-gcc-wrapper=no) wrapper=no ;;
         --enable-*|--disable-*|--with-*|--without-*|--*dir=*) ;;
         --host=*|--target=*) target=${arg#*=} ;;
         --build=*) build=${arg#*=} ;;
@@ -256,39 +235,6 @@ fi
 echo "$cc_family"
 
 #
-# Figure out toolchain wrapper to build
-#
-if test "$wrapper" = auto -o "$wrapper" = detect ; then
-    echo "#include <stdlib.h>" > "$tmpc"
-    echo "#if ! __GLIBC__" >> "$tmpc"
-    echo "#error no" >> "$tmpc"
-    echo "#endif" >> "$tmpc"
-    printf "checking for toolchain wrapper to build... "
-    if test "$wrapper" = auto && ! $CC -c -o /dev/null "$tmpc" >/dev/null 2>&1 ; then
-        echo "none"
-    elif test "$cc_family" = gcc ; then
-        gcc_wrapper=yes
-        echo "gcc"
-    elif test "$cc_family" = clang ; then
-        clang_wrapper=yes
-        echo "clang"
-    else
-        echo "none"
-        if test "$wrapper" = detect ; then
-            fail "$0: could not find an appropriate toolchain wrapper"
-        fi
-    fi
-fi
-
-if test "$gcc_wrapper" = yes ; then
-    tools="$tools obj/musl-gcc"
-    tool_libs="$tool_libs lib/musl-gcc.specs"
-fi
-if test "$clang_wrapper" = yes ; then
-    tools="$tools obj/musl-clang obj/ld.musl-clang"
-fi
-
-#
 # Find the target architecture
 #
 printf "checking target system type... "
@@ -383,47 +329,6 @@ else
     ADD_CFI=no
 fi
 printf "%s\n" "$ADD_CFI"
-
-#
-# Possibly add a -O option to CFLAGS and select modules to optimize with
-# -O3 based on the status of --enable-optimize and provided CFLAGS.
-#
-printf "checking for optimization settings... "
-case "x$optimize" in
-    xauto)
-        if fnmatch '-O*|*\ -O*' "$CFLAGS_AUTO $CFLAGS" ; then
-            printf "using provided CFLAGS\n" ;optimize=no
-        else
-            printf "using defaults\n" ; optimize=yes
-        fi
-        ;;
-    xsize|xnone) printf "minimize size\n" ; optimize=size ;;
-    xno|x) printf "disabled\n" ; optimize=no ;;
-    *) printf "custom\n" ;;
-esac
-
-test "$optimize" = no || tryflag CFLAGS_AUTO -Os || tryflag CFLAGS_AUTO -O2
-test "$optimize" = yes && optimize="internal,malloc,string"
-
-if fnmatch 'no|size' "$optimize" ; then :
-else
-    printf "components to be optimized for speed:"
-    while test "$optimize" ; do
-        case "$optimize" in
-            *,*) this=${optimize%%,*} optimize=${optimize#*,} ;;
-            *) this=$optimize optimize=
-        esac
-        printf " $this"
-        case "$this" in
-            */*.c) ;;
-            */*) this=$this*.c ;;
-            *) this=$this/*.c ;;
-        esac
-        OPTIMIZE_GLOBS="$OPTIMIZE_GLOBS $this"
-    done
-    OPTIMIZE_GLOBS=${OPTIMIZE_GLOBS# }
-    printf "\n"
-fi
 
 # Always try -pipe
 tryflag CFLAGS_AUTO -pipe
@@ -640,10 +545,8 @@ printf "creating config.mk... "
 cmdline=$(quote "$0")
 for i ; do cmdline="$cmdline $(quote "$i")" ; done
 
-exec 3>&1 1>config.mk
 
-
-cat << EOF
+cat > config.mk << EOF
 # This version of config.mk was generated by:
 # $cmdline
 # Any changes made here will be lost if configure is re-run
@@ -665,15 +568,11 @@ LDFLAGS = $LDFLAGS
 LDFLAGS_AUTO = $LDFLAGS_AUTO
 CROSS_COMPILE = $CROSS_COMPILE
 LIBCC = $LIBCC
-OPTIMIZE_GLOBS = $OPTIMIZE_GLOBS
 ALL_TOOLS = $tools
 TOOL_LIBS = $tool_libs
 ADD_CFI = $ADD_CFI
 EOF
-test "x$static" = xno && echo "STATIC_LIBS ="
-test "x$cc_family" = xgcc && echo 'WRAPCC_GCC = $(CC)'
-test "x$cc_family" = xclang && echo 'WRAPCC_CLANG = $(CC)'
-exec 1>&3 3>&-
+
 
 test "$srcdir" = "." || ln -sf $srcdir/Makefile .
 
