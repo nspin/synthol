@@ -33,7 +33,7 @@ extern struct { char _entry[32]; } hypercall_page[];
         __res;                                                                                  \
     })
 
-long HYPERCALL_mmu_update(const struct mmu_update reqs[],
+int HYPERCALL_mmu_update(const struct mmu_update reqs[],
                           unsigned count, unsigned *done_out,
                           unsigned dom)
 {
@@ -41,59 +41,59 @@ long HYPERCALL_mmu_update(const struct mmu_update reqs[],
                    (uintptr_t)done_out, dom, 0);
 }
 
-long HYPERCALL_memory_op(unsigned int cmd, void *arg)
+int HYPERCALL_memory_op(unsigned int cmd, void *arg)
 {
   return hypercall(memory_op, cmd, (uintptr_t)arg, 0, 0, 0);
 }
 
-long HYPERCALL_console_io(int cmd, int count, char *buffer)
+int HYPERCALL_console_io(int cmd, int count, char *buffer)
 {
   return hypercall(console_io, cmd, count,(uintptr_t)buffer,0,0);
 }
 
-long HYPERCALL_vcpu_op(int cmd, int vcpuid, void *extra)
+int HYPERCALL_vcpu_op(int cmd, int vcpuid, void *extra)
 {
   return hypercall(vcpu_op, cmd, vcpuid, (uintptr_t)extra, 0, 0);
 }
 
-long HYPERCALL_mmuext_op(struct mmuext_op *op, unsigned int count,
+int HYPERCALL_mmuext_op(struct mmuext_op *op, unsigned int count,
                          unsigned int *pdone, unsigned int foreigndom)
 {
   return hypercall(mmuext_op, (uintptr_t)op, count,
                    (uintptr_t)pdone, foreigndom, 0);
 }
 
-long HYPERCALL_sched_op(int cmd, void *arg)
+int HYPERCALL_sched_op(int cmd, void *arg)
 {
   return hypercall(sched_op, cmd, (uintptr_t)arg, 0, 0, 0);
 }
 
-long HYPERCALL_domctl(xen_domctl_t *op)
+int HYPERCALL_domctl(xen_domctl_t *op)
 {
   return hypercall(domctl, (uintptr_t)op, 0, 0, 0, 0);
 }
 
-long HYPERCALL_grant_table_op(int cmd, void *args, unsigned int count)
+int HYPERCALL_grant_table_op(int cmd, void *args, unsigned int count)
 {
   return hypercall(grant_table_op, cmd, args, count, 0, 0);
 }
 
-long HYPERCALL_set_trap_table(const struct trap_info traps[])
+int HYPERCALL_set_trap_table(const struct trap_info traps[])
 {
   return hypercall(set_trap_table, traps, 0, 0, 0, 0);
 }
 
-long HYPERCALL_set_callbacks(void *event, void *fail)
+int HYPERCALL_set_callbacks(void *event, void *fail)
 {
   return hypercall(set_callbacks, event, fail, 0, 0, 0);
 }
 
-long HYPERCALL_event_channel_op(int cmd, void *arg)
+int HYPERCALL_event_channel_op(int cmd, void *arg)
 {
   return hypercall(event_channel_op, cmd, arg, 0, 0, 0);
 }
 
-long HYPERCALL_set_timer_op(uint64_t until)
+int HYPERCALL_set_timer_op(uint64_t until)
 {
   return hypercall(set_timer_op, until, 0, 0, 0, 0);
 }
