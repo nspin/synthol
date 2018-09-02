@@ -79,7 +79,7 @@ LDFLAGS_ALL = $(LDFLAGS_AUTO) $(LDFLAGS)
 
 AR      = $(CROSS_COMPILE)ar
 RANLIB  = $(CROSS_COMPILE)ranlib
-INSTALL = $(srcdir)/tools/install.sh
+INSTALL = install
 
 
 -include config.mk
@@ -101,15 +101,15 @@ $(all_libs) $(all_objs) $(all_libs) $(all_objs) $(musl_gen_hdrs_ext) $(musl_gen_
 $(obj_dirs):
 	mkdir -p $@
 
-obj/musl/include/bits/alltypes.h: $(srcdir)/musl/arch/$(ARCH)/bits/alltypes.h.in $(srcdir)/musl/include/alltypes.h.in $(srcdir)/tools/mkalltypes.sed
-	sed -f $(srcdir)/tools/mkalltypes.sed $(srcdir)/musl/arch/$(ARCH)/bits/alltypes.h.in $(srcdir)/musl/include/alltypes.h.in > $@
+obj/musl/include/bits/alltypes.h: $(srcdir)/musl/arch/$(ARCH)/bits/alltypes.h.in $(srcdir)/musl/include/alltypes.h.in $(srcdir)/musl/tools/mkalltypes.sed
+	sed -f $(srcdir)/musl/tools/mkalltypes.sed $(srcdir)/musl/arch/$(ARCH)/bits/alltypes.h.in $(srcdir)/musl/include/alltypes.h.in > $@
 
 obj/musl/include/bits/syscall.h: $(srcdir)/musl/arch/$(ARCH)/bits/syscall.h.in
 	cp $< $@
 	sed -n -e s/__NR_/SYS_/p < $< >> $@
 
 obj/musl/src/internal/version.h: $(wildcard $(srcdir)/VERSION $(srcdir)/.git)
-	printf '#define VERSION "%s"\n' "$$(cd $(srcdir)/musl; sh tools/version.sh)" > $@
+	printf '#define VERSION "%s"\n' "$$(cat $(srcdir)/musl/VERSION)" > $@
 
 obj/src/internal/version.o: obj/src/internal/version.h
 
@@ -133,7 +133,7 @@ CC_CMD = $(CC) $(CFLAGS_ALL) -c -o $@ $<
 
 # Choose invocation of assembler to be used
 ifeq ($(ADD_CFI),yes)
-	AS_CMD = LC_ALL=C awk -f $(srcdir)/tools/add-cfi.common.awk -f $(srcdir)/tools/add-cfi.$(ARCH).awk $< | $(CC) $(CFLAGS_ALL) -x assembler -c -o $@ -
+	AS_CMD = LC_ALL=C awk -f $(srcdir)/musl/tools/add-cfi.common.awk -f $(srcdir)/musl/tools/add-cfi.$(ARCH).awk $< | $(CC) $(CFLAGS_ALL) -x assembler -c -o $@ -
 else
 	AS_CMD = $(CC_CMD)
 endif

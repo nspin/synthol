@@ -1,5 +1,4 @@
-*.o
 src/config.mk
 src/lib
 src/obj
-src/out
+out
