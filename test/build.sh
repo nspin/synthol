@@ -1,3 +1,4 @@
 #!/bin/sh
-clang -B sl/lib -isystem sl/include -L sl/lib \
-    -Wl,-T,sl/lib/kernel.lds -o hello hello.c
+PREFIX=../out
+clang -B $PREFIX/lib -isystem $PREFIX/include -L $PREFIX/lib \
+    -Wl,-T,$PREFIX/lib/kernel.lds -o test test.c
