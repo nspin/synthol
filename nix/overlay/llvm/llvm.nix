@@ -1,4 +1,4 @@
-{ stdenv, cmake, python
+{ stdenv, cmake, python2
 , libffi, libxml2
 , ncurses, zlib
 , debugVersion ? false
@@ -13,7 +13,7 @@ stdenv.mkDerivation {
 
   outputs = [ "out" "python" ];
 
-  nativeBuildInputs = [ cmake python ];
+  nativeBuildInputs = [ cmake python2 ];
   buildInputs = [ libxml2 libffi ];
   propagatedBuildInputs = [ ncurses zlib ];
 

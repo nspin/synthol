@@ -1,4 +1,4 @@
-{ stdenv, cmake, python
+{ stdenv, cmake, python2
 , libxml2, libedit
 
 , llvm
@@ -19,7 +19,7 @@ stdenv.mkDerivation {
   #   mv clang-tools-extra-* $sourceRoot/tools/extra
   # '';
 
-  nativeBuildInputs = [ cmake python ];
+  nativeBuildInputs = [ cmake python2 ];
   buildInputs = [ libxml2 libedit llvm ];
 
   cmakeFlags = [

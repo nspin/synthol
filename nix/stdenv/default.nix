@@ -1,1 +1,0 @@
-import ../nixpkgs/pkgs/stdenv

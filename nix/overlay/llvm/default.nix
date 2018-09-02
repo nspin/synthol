@@ -1,13 +1,7 @@
-{ lib, lowPrio, newScope, stdenv, targetPlatform, cmake, libstdcxxHook
-, libxml2, python2, isl, fetchurl, overrideCC, wrapCC
-
-, binutils-unwrapped
-
-, wrapCCWithFoo
-, wrapBintoolsWith
-, ccWrapperFunFoo
-, bintoolsWrapperFun
-
+{ lib, newScope, stdenv
+, fetchurl
+, cmake, python2
+, libxml2, isl
 }:
 
 let
@@ -57,97 +51,6 @@ let
     # libcxxabi = callPackage ./libc++abi.nix {};
     # libcxx = callPackage ./libc++ {};
     # openmp = callPackage ./openmp.nix {};
-
-    # stdenvNothing = stdenv.override (drv: {
-    #   allowedRequisites = null;
-    #   cc = wrapCCWithFoo {
-    #     name = "clang-nothing";
-    #     cc = self.clang;
-    #     libc = null;
-    #     bintools = wrapBintoolsWith {
-    #       libc = null;
-    #       bintools = binutils-unwrapped;
-    #     };
-    #   };
-    # });
-
-    # lameMusl = (callPackage ../musl {
-    #   stdenv = self.stdenvNothing;
-    # }).overrideDerivation (drv: {
-    #   # NIX_CFLAGS_COMPILE = " -v -fno-builtin ${drv.NIX_CFLAGS_COMPILE or ""}";
-    #   # We don't have compiler-rt
-    # });
-
-    # stdenvLameMusl = stdenv.override (drv: {
-    #   allowedRequisites = null;
-    #   cc = wrapCCWithFoo {
-    #     name = "clang-nothing";
-    #     cc = self.clang;
-    #     libc = self.lameMusl;
-    #     bintools = wrapBintoolsWith {
-    #       libc = self.lameMusl;
-    #       bintools = binutils-unwrapped;
-    #     };
-    #   };
-    # });
-
-    # stdenvNothing = stdenv.override (drv: {
-    #   allowedRequisites = null;
-    #   cc = ccWrapperFun {
-    #     inherit (drv.cc) nativeTools nativeLibc;
-    #     cc = self.clang;
-    #     noLibc = true;
-    #     buntools = wrapBintoolsWith {
-    #       libc = null;
-    #       bintools = bintools-unwrapped;
-    #     };
-    #   };
-
-    # stdenvNothing =
-    #   let
-    #     me = stdenv.override (drv: {
-    #       allowedRequisites = null;
-    #       inherit stdenv
-    #       initialPath = [];
-    #       shell = stdenv.shell;
-    #       fetchurlBoot = stenv;
-    #       cc = ccWrapperFun {
-    #         cc = self.clang;
-    #         noLibc = true;
-    #         nativeTools = false;
-    #         nativeLibc = false;
-    #         bintools = bintoolsWrapperFun {
-    #           nativeTools = false;
-    #           nativeLibc = false;
-    #           nativePrefix = ""; # ?
-    #           stdenvNoCC = me.override { cc = null; };
-    #           noLibc = (libc == null);
-
-    # clang = if stdenv.cc.isGNU then self.libstdcxxClang else self.libcxxClang;
-
-    # libstdcxxClang = ccWrapperFun {
-    #   cc = self.clang-unwrapped;
-    #   /* FIXME is this right? */
-    #   inherit (stdenv.cc) bintools libc nativeTools nativeLibc;
-    #   extraPackages = [ libstdcxxHook ];
-    # };
-
-    # libcxxClang = ccWrapperFun {
-    #   cc = self.clang-unwrapped;
-    #   /* FIXME is this right? */
-    #   inherit (stdenv.cc) bintools libc nativeTools nativeLibc;
-    #   extraPackages = [ self.libcxx self.libcxxabi ];
-    # };
-
-    # stdenv = stdenv.override (drv: {
-    #   allowedRequisites = null;
-    #   cc = self.clang;
-    # });
-
-    # libcxxStdenv = stdenv.override (drv: {
-    #   allowedRequisites = null;
-    #   cc = self.libcxxClang;
-    # });
 
   };
 

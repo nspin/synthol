@@ -5,7 +5,5 @@
 
 import ./nixpkgs/pkgs/top-level {
   inherit localSystem crossSystem;
-  config = { };
   overlays = [ (import ./overlay) ];
-  stdenvStages = import ./stdenv;
 }

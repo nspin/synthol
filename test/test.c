@@ -34,8 +34,7 @@ void shutdown(int reason)
   }
 }
 
-/* char *msg = "a message\n"; */
-char *msg = "helo\n";
+char *msg = "a message\n";
 
 void synthol_main(start_info_t *start_info, void *init_sp) {
     HYPERCALL_console_io(CONSOLEIO_write, strlen(msg), msg);
