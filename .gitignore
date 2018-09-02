@@ -3,6 +3,6 @@
 *.a
 *.so
 *.so.1
-config.mak
+config.mk
 lib/kernel.lds
 /obj/
