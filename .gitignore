@@ -1,9 +1,5 @@
 *.o
-*.lo
-*.a
-*.so
-*.so.1
-config.mk
-lib/kernel.lds
-/obj/
-out
+src/config.mk
+src/lib
+src/obj
+src/out

@@ -1,4 +1,3 @@
-# { localSystem ? { config = "x86_64-unknown-linux-musl"; }
 { localSystem ? { config = "x86_64-unknown-linux-gnu"; }
 , crossSystem ? null
 }:
