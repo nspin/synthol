@@ -42,8 +42,7 @@ let
   # The wrapper scripts use 'cat' and 'grep', so we may need coreutils.
   coreutils_bin = if nativeTools then "" else getBin coreutils;
 
-  default_cxx_stdlib_compile = optionalString (targetPlatform.isLinux && !(cc.isGNU or false) && !nativeTools)
-    "-isystem $(echo -n ${cc.gcc}/include/c++/*) -isystem $(echo -n ${cc.gcc}/include/c++/*)/$(${cc.gcc}/bin/gcc -dumpmachine)";
+  default_cxx_stdlib_compile = "";
 
   dashlessTarget = stdenv.lib.replaceStrings ["-"] ["_"] targetPlatform.config;
 
@@ -147,7 +146,7 @@ stdenv.mkDerivation {
       export named_cc=${targetPrefix}cc
       export named_cxx=${targetPrefix}c++
 
-      # export default_cxx_stdlib_compile="{default_cxx_stdlib_compile}"
+      export default_cxx_stdlib_compile="${default_cxx_stdlib_compile}"
 
       if [ -e $ccPath/${targetPrefix}gcc ]; then
         wrap ${targetPrefix}gcc ${./cc-wrapper.sh} $ccPath/${targetPrefix}gcc

@@ -3,7 +3,7 @@ self: super: with self; {
   llvmPackagesRaw = callPackage ./llvm { };
 
   wrapCCWithNoGCC = { name ? "", cc, bintools, libc, extraBuildCommands ? "" }:
-    callPackage ./cc-wrapper rec {
+    callPackage ./build-support/cc-wrapper rec {
       nativeTools = targetPlatform == hostPlatform && stdenv.cc.nativeTools or false;
       nativeLibc = targetPlatform == hostPlatform && stdenv.cc.nativeLibc or false;
       nativePrefix = stdenv.cc.nativePrefix or "";
