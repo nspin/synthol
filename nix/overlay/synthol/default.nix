@@ -31,8 +31,6 @@ stdenv.mkDerivation rec {
 
   hardeningDisable = [ "all" ];
 
-  # LIBCC = " ";
-
   preConfigure = ''
     configureFlagsArray+=("--syslibdir=$out/lib")
   '';

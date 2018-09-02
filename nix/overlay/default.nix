@@ -41,6 +41,9 @@ self: super: with self; {
       bintools = wrapBintoolsWith {
         libc = synthol;
         bintools = binutils-unwrapped;
+        extraPackages = [
+          xen
+        ];
         extraBuildCommands = ''
           echo '-T ${synthol}/lib/kernel.lds' >> libc_ldflags_before
         '';
