@@ -92,6 +92,9 @@ all:
 
 else
 
+$(info $(install_lib))
+# $(info /$(ARCH)/*.[csS])
+
 all: $(all_libs)
 
 obj_dirs = $(sort $(dir $(all_libs) $(all_objs) $(musl_gen_hdrs_ext) $(musl_gen_hdrs_int)))

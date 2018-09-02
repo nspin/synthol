@@ -14,6 +14,7 @@ _start:
     fldcw newfpucw(%rip)
     movq %rsi, %rdi
     movq %rsp, %rsi
+    add $0x80000, %rsp # we are guarenteed 512K of padding
     call synthol_main
 
 .data
