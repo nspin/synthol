@@ -18,7 +18,7 @@ prefix     = /usr/local/synthol
 includedir = $(prefix)/include
 libdir     = $(prefix)/lib
 
-src_dirs  = $(addprefix $(srcdir)/, musl/src/* compiler-rt/src synthol/src crt)
+src_dirs  = $(addprefix $(srcdir)/, musl/src/* compiler-rt/builtins synthol/src crt)
 base_srcs = $(sort $(wildcard $(addsuffix /*.c, $(src_dirs))))
 arch_srcs = $(sort $(wildcard $(addsuffix /$(ARCH)/*.[csS], $(src_dirs))))
 all_objs  = $(sort $(patsubst $(srcdir)/%, obj/%.o, $(basename $(base_srcs) $(arch_srcs))))
