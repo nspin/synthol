@@ -160,8 +160,8 @@ else
 endif
 
 # TODO not working
-$(build_obj)/src/%.o: $(srcdir)/src/%.S $(volatile_synth_hdrs)
-$(build_obj)/src/%.o: $(srcdir)/src/%.c $(volatile_synth_hdrs)
+# $(build_obj)/src/%.o: $(srcdir)/src/%.S $(volatile_synth_hdrs)
+# $(build_obj)/src/%.o: $(srcdir)/src/%.c $(volatile_synth_hdrs)
 
 $(build_obj)/%.o: $(srcdir)/%.s
 	$(AS_CMD)
@@ -170,6 +170,12 @@ $(build_obj)/%.o: $(srcdir)/%.S $(volatile_musl_hdrs)
 	$(CC_CMD)
 
 $(build_obj)/%.o: $(srcdir)/%.c $(volatile_musl_hdrs)
+	$(CC_CMD)
+
+$(build_obj)/src/%.o: $(srcdir)/src/%.S $(volatile_musl_hdrs) $(volatile_synth_hdrs)
+	$(CC_CMD)
+
+$(build_obj)/src/%.o: $(srcdir)/src/%.c $(volatile_musl_hdrs) $(volatile_synth_hdrs)
 	$(CC_CMD)
 
 $(build_lib)/libc.a: $(lib_objs)
