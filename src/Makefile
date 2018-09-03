@@ -47,7 +47,7 @@ define hdrs_in
 	$(wildcard $(patsubst %, $(1)/%.h, * */* */*/*))
 endef
 
-define hdrs_many
+define hdrs_in_many
 	$(foreach dir,$(1),$(call hdrs_in,$(dir)))
 endef
 
@@ -63,9 +63,11 @@ musl_gen_hdrs_ext = $(build_obj)/musl/include/bits/alltypes.h $(build_obj)/musl/
 musl_gen_hdrs_int = $(build_obj)/musl/src/internal/version.h
 musl_impl_hdrs    = $(addprefix $(srcdir)/musl/src/internal/, stdio_impl.h pthread_impl.h locale_impl.h libc.h)
 
-volatile_hdrs = \
-	$(musl_gen_hdrs_ext) $(musl_gen_hdrs_int) $(musl_impl_hdrs) \
-	$(call hdrs_in_many,$(src_public_inc_dirs_synth))
+volatile_musl_hdrs = $(musl_gen_hdrs_ext) $(musl_gen_hdrs_int) $(musl_impl_hdrs)
+volatile_synth_hdrs = $(call hdrs_in_many,$(src_public_inc_dirs_synth))
+volatile_hdrs = $(volatile_musl_hdrs) $(volatile_synth_hdrs)
+
+wat = $(volatile_synth_hdrs)
 
 src_public_inc_dirs_musl = $(srcdir)/musl/include $(srcdir)/musl/arch/$(ARCH) $(srcdir)/musl/arch/generic
 src_public_inc_dirs_synth = $(srcdir)/include $(srcdir)/arch/$(ARCH)
@@ -157,13 +159,17 @@ else
 	AS_CMD = $(CC_CMD)
 endif
 
-$(build_obj)/%.o: $(srcdir)/%.s $(volatile_hdrs)
+# TODO not working
+$(build_obj)/src/%.o: $(srcdir)/src/%.S $(volatile_synth_hdrs)
+$(build_obj)/src/%.o: $(srcdir)/src/%.c $(volatile_synth_hdrs)
+
+$(build_obj)/%.o: $(srcdir)/%.s
 	$(AS_CMD)
 
-$(build_obj)/%.o: $(srcdir)/%.S $(volatile_hdrs)
+$(build_obj)/%.o: $(srcdir)/%.S $(volatile_musl_hdrs)
 	$(CC_CMD)
 
-$(build_obj)/%.o: $(srcdir)/%.c $(volatile_hdrs)
+$(build_obj)/%.o: $(srcdir)/%.c $(volatile_musl_hdrs)
 	$(CC_CMD)
 
 $(build_lib)/libc.a: $(lib_objs)
