@@ -33,7 +33,6 @@ Some influential environment variables:
   CC                      C compiler command [detected]
   CFLAGS                  C compiler flags [-Os -pipe ...]
   CROSS_COMPILE           prefix for cross compiler and tools [none]
-  LIBCC                   compiler runtime library [detected]
 
 Use these variables to override the choices made by configure.
 
@@ -117,8 +116,6 @@ srcdir=
 prefix=/usr/local/synthol
 libdir='$(prefix)/lib'
 includedir='$(prefix)/include'
-tools=
-tool_libs=
 build=
 target=
 debug=no
@@ -148,7 +145,6 @@ for arg ; do
         CPPFLAGS=*) CPPFLAGS=${arg#*=} ;;
         LDFLAGS=*) LDFLAGS=${arg#*=} ;;
         CROSS_COMPILE=*) CROSS_COMPILE=${arg#*=} ;;
-        LIBCC=*) LIBCC=${arg#*=} ;;
         *=*) ;;
         *) build=$arg ; target=$arg ;;
     esac
@@ -219,20 +215,6 @@ tryflag   CFLAGS_TRY  -Werror=unused-command-line-argument
 tryflag   CFLAGS_TRY  -Werror=ignored-optimization-argument
 tryldflag LDFLAGS_TRY -Werror=unknown-warning-option
 tryldflag LDFLAGS_TRY -Werror=unused-command-line-argument
-
-#
-# Need to know if the compiler is gcc or clang to decide which toolchain
-# wrappers to build.
-#
-printf "checking for C compiler family... "
-cc_ver="$(LC_ALL=C $CC -v 2>&1)"
-cc_family=unknown
-if fnmatch '*gcc\ version*' "$cc_ver" ; then
-    cc_family=gcc
-elif fnmatch '*clang\ version*' "$cc_ver" ; then
-    cc_family=clang
-fi
-echo "$cc_family"
 
 #
 # Find the target architecture
@@ -456,15 +438,6 @@ tryldflag LDFLAGS_AUTO -Wl,--exclude-libs=ALL
 # a linking optimization.
 tryldflag LDFLAGS_AUTO -Wl,-Bsymbolic-functions
 
-# Find compiler runtime library
-test -z "$LIBCC" && tryldflag LIBCC -lgcc && tryldflag LIBCC -lgcc_eh
-test -z "$LIBCC" && tryldflag LIBCC -lcompiler_rt
-test -z "$LIBCC" && try_libcc=`$CC -print-libgcc-file-name 2>/dev/null` \
-    && tryldflag LIBCC "$try_libcc"
-test -z "$LIBCC" && try_libcc=`$CC -print-file-name=libpcc.a 2>/dev/null` \
-    && tryldflag LIBCC "$try_libcc"
-printf "using compiler runtime libraries: %s\n" "$LIBCC"
-
 # Figure out arch variants for archs with variants
 SUBARCH=
 t="$CFLAGS_C99FSE $CPPFLAGS $CFLAGS"
@@ -567,9 +540,6 @@ CPPFLAGS = $CPPFLAGS
 LDFLAGS = $LDFLAGS
 LDFLAGS_AUTO = $LDFLAGS_AUTO
 CROSS_COMPILE = $CROSS_COMPILE
-LIBCC = $LIBCC
-ALL_TOOLS = $tools
-TOOL_LIBS = $tool_libs
 ADD_CFI = $ADD_CFI
 EOF
 

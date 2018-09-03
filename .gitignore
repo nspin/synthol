@@ -1,4 +1,5 @@
 src/config.mk
-src/lib
-src/obj
+src/build
+test/config.mk
+test/build
 out

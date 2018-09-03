@@ -1,15 +1,16 @@
-synthol_out = ../out
+# this is a hack
 
-all: a.out
+-include ../src/Makefile
 
-clean:
+# $(info $(inc_flags))
+# $(error " ")
+
+test: a.out
+
+testclean:
 	rm -f a.out
 
-synthol:
-	$(MAKE) -C ../src
+a.out: test.c $(all_libs)
+	clang -isystem $(build_inc) -B $(build_lib) -L $(build_lib) -Wl,-T,$(build_lib)/kernel.lds $<
 
-a.out: test.c synthol
-	clang -B $(synthol_out)/lib -isystem $(synthol_out)/include -L $(synthol_out)/lib \
-	    -Wl,-T,$(synthol_out)/lib/kernel.lds test.c
-
-.PHONY: all clean synthol
+.PHONY: test testclean
