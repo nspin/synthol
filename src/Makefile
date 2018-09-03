@@ -94,7 +94,7 @@ LDFLAGS_AUTO =
 CPPFLAGS =
 CFLAGS =
 # CFLAGS_AUTO = -Os -pipe
-CFLAGS_AUTO = -g -O0 -pipe -fno-stack-protector
+CFLAGS_AUTO = -g -O0 -pipe
 CFLAGS_C99FSE = -ffreestanding -nostdinc -std=c99
 
 CFLAGS_ALL = $(CFLAGS_C99FSE)
