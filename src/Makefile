@@ -93,8 +93,7 @@ LDFLAGS =
 LDFLAGS_AUTO =
 CPPFLAGS =
 CFLAGS =
-# CFLAGS_AUTO = -Os -pipe
-CFLAGS_AUTO = -g -O0 -pipe
+CFLAGS_AUTO = -Os -pipe
 CFLAGS_C99FSE = -ffreestanding -nostdinc -std=c99
 
 CFLAGS_ALL = $(CFLAGS_C99FSE)
@@ -147,9 +146,6 @@ $(build_obj)/src/internal/version.o: $(build_obj)/src/internal/version.h
 
 MEMOPS_SRCS = src/string/memcpy.c src/string/memmove.c src/string/memcmp.c src/string/memset.c
 $(MEMOPS_SRCS:%.c=$(build_obj)/%.o): CFLAGS_ALL += $(CFLAGS_MEMOPS)
-
-# When the time comes, see NOSSP_SRCS in musl Makefile
-CFLAGS_ALL += $(CFLAGS_NOSSP)
 
 CC_CMD = $(CC) $(CFLAGS_ALL) -c -o $@ $<
 
