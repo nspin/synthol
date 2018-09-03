@@ -1,4 +1,3 @@
-#
 # Makefile for synthol (requires GNU make)
 #
 # Use config.mk to override any of the following variables.
@@ -13,12 +12,14 @@
 #      + -----------------------
 #        complexity of Makefile
 
+# NOTE: changes to headers other than those in $(volatile_hdrs) don't trigger rebuild
+
 # TODO:
 #	- hardening
-#	- hardening
+#	- more debugging
 
 srcdir = .
-prefix = /usr/local/synthol
+prefix = /dev/null
 libdir = $(prefix)/lib
 incdir = $(prefix)/include
 
@@ -42,38 +43,52 @@ crt_lib_names     = $(notdir $(crt_objs))
 all_lib_names     = $(real_lib_names) $(fake_lib_names) $(crt_lib_names) crtbeginT.o kernel.lds
 all_libs          = $(addprefix $(build_lib)/, $(all_lib_names))
 
+define hdrs_in
+	$(wildcard $(patsubst %, $(1)/%.h, * */* */*/*))
+endef
+
+define hdrs_many
+	$(foreach dir,$(1),$(call hdrs_in,$(dir)))
+endef
+
+define hdr_names_in
+	$(patsubst $(1)/%,%,$(wildcard $(patsubst %, $(1)/%.h, * */* */*/*)))
+endef
+
+define hdr_names_in_many
+	$(foreach dir,$(1),$(call hdr_names_in,$(dir)))
+endef
+
 musl_gen_hdrs_ext = $(build_obj)/musl/include/bits/alltypes.h $(build_obj)/musl/include/bits/syscall.h
 musl_gen_hdrs_int = $(build_obj)/musl/src/internal/version.h
-musl_impl_hdrs    = $(addprefix $(srcdir)/src/internal/, stdio_impl.h pthread_impl.h locale_impl.h libc.h)
-src_hdrs          = $(wildcard $(addsuffix *.h, $(src_dirs)))
+musl_impl_hdrs    = $(addprefix $(srcdir)/musl/src/internal/, stdio_impl.h pthread_impl.h locale_impl.h libc.h)
 
-musl_inc_hdrs        = $(wildcard $(patsubst %, $(srcdir)/musl/include/%.h, * */* */*/*))
-musl_arch_inc_hdrs   = $(wildcard $(patsubst %, $(srcdir)/musl/arch/$(ARCH)/%.h, * */* */*/*))
-musl_hcra_inc_hdrs   = $(wildcard $(patsubst %, $(srcdir)/musl/arch/generic/%.h, * */* */*/*))
-synth_inc_hdrs       = $(wildcard $(patsubst %, $(srcdir)/include/%.h, * */* */*/*))
-synth_arch_incs_hdrs = $(wildcard $(patsubst %, $(srcdir)/arch/$(ARCH)/%.h, * */* */*/*))
-all_inc_hdrs         = $(sort $(musl_inc_hdrs) $(musl_arch_inc_hdrs) $(musl_hcra_inc_hdrs) $(musl_gen_hdrs_ext) \
-                              $(synth_inc_hdrs) $(synth_arch_incs_hdrs) )
+volatile_hdrs = \
+	$(musl_gen_hdrs_ext) $(musl_gen_hdrs_int) $(musl_impl_hdrs) \
+	$(call hdrs_in_many,$(src_public_inc_dirs_synth))
 
-all_hdrs             = $(sort $(all_inc_hdrs) $(musl_gen_hdrs_int) $(src_hdrs))
-volatile_hdrs        = $(all_hdrs) # TODO(nspin)
+src_public_inc_dirs_musl = $(srcdir)/musl/include $(srcdir)/musl/arch/$(ARCH) $(srcdir)/musl/arch/generic
+src_public_inc_dirs_synth = $(srcdir)/include $(srcdir)/arch/$(ARCH)
+src_public_inc_dirs = $(src_public_inc_dirs_musl) $(src_public_inc_dirs_synth)
 
-all_inc_names = $(sort \
-	$(musl_inc_hdrs:$(srcdir)/musl/include/%=%) \
-	$(musl_arch_inc_hdrs:$(srcdir)/musl/arch/$(ARCH)/%=%) \
-	$(musl_hcra_inc_hdrs:$(srcdir)/musl/arch/generic/%=%) \
-	$(synth_inc_hdrs:$(srcdir)/include/%=%) \
-	$(synth_arch_incs_hdrs:$(srcdir)/arch/$(ARCH)/%=%) \
-	bits/alltypes.h bits/syscall.h )
+all_public_hdr_names = $(sort \
+	$(call hdr_names_in_many,$(src_public_inc_dirs)) \
+	bits/alltypes.h bits/syscall.h \
+	)
 
-all_incs = $(addprefix $(build_inc)/, $(all_inc_names))
+all_incs = $(addprefix $(build_inc)/, $(all_public_hdr_names))
+
+hdr_dirs = $(src_public_inc_dirs) \
+	$(build_obj)/musl/src/internal $(srcdir)/musl/src/internal \
+	$(build_obj)/musl/include
+
+hdr_flags = $(addprefix -I, $(hdr_dirs))
 
 install_lib = $(addprefix $(DESTDIR)$(libdir)/, $(all_lib_names))
-install_inc = $(addprefix $(DESTDIR)$(incdir)/, $(all_inc_names))
+install_inc = $(addprefix $(DESTDIR)$(incdir)/, $(all_public_hdr_names))
 
 LDFLAGS =
 LDFLAGS_AUTO =
-LIBCC =
 CPPFLAGS =
 CFLAGS =
 CFLAGS_AUTO = -Os -pipe
@@ -81,9 +96,7 @@ CFLAGS_C99FSE = -ffreestanding -nostdinc -std=c99
 
 CFLAGS_ALL = $(CFLAGS_C99FSE)
 CFLAGS_ALL += -D_XOPEN_SOURCE=700
-CFLAGS_ALL += -I$(srcdir)/musl/arch/$(ARCH) -I$(srcdir)/musl/arch/generic
-CFLAGS_ALL += -I$(build_obj)/musl/src/internal -I$(srcdir)/musl/src/internal -I$(build_obj)/musl/include -I$(srcdir)/musl/include
-CFLAGS_ALL += -I$(srcdir)/include -I$(srcdir)/arch/$(ARCH)
+CFLAGS_ALL += $(hdr_flags)
 CFLAGS_ALL += $(CPPFLAGS) $(CFLAGS_AUTO) $(CFLAGS)
 
 LDFLAGS_ALL = $(LDFLAGS_AUTO) $(LDFLAGS)
@@ -103,11 +116,12 @@ all:
 
 else
 
-# wat = $(all_incs)
 # $(info $(wat))
-# $(error " ")
+# $(error "")
 
-all: $(all_libs) $(all_incs)
+all: all-libs all-incs
+all-libs: $(all_libs)
+all-incs: $(all_incs)
 
 all_build = $(all_libs) $(all_incs) $(all_objs) $(musl_gen_hdrs_ext) $(musl_gen_hdrs_int)
 build_dirs = $(sort $(dir $(all_build)))
@@ -131,13 +145,8 @@ $(build_obj)/src/internal/version.o: $(build_obj)/src/internal/version.h
 MEMOPS_SRCS = src/string/memcpy.c src/string/memmove.c src/string/memcmp.c src/string/memset.c
 $(MEMOPS_SRCS:%.c=$(build_obj)/%.o): CFLAGS_ALL += $(CFLAGS_MEMOPS)
 
-NOSSP_SRCS = $(wildcard crt/*.c) \
-	musl/src/env/__libc_start_main.c musl/src/env/__init_tls.c \
-	musl/src/env/__stack_chk_fail.c \
-	musl/src/thread/__set_thread_area.c musl/src/thread/$(ARCH)/__set_thread_area.c \
-	musl/src/string/memset.c musl/src/string/$(ARCH)/memset.c \
-	musl/src/string/memcpy.c musl/src/string/$(ARCH)/memcpy.c \
-$(NOSSP_SRCS:%.c=$(build_obj)/%.o): CFLAGS_ALL += $(CFLAGS_NOSSP)
+# When the time comes, see NOSSP_SRCS in musl Makefile
+CFLAGS_ALL += $(CFLAGS_NOSSP)
 
 CC_CMD = $(CC) $(CFLAGS_ALL) -c -o $@ $<
 
@@ -181,32 +190,30 @@ $(build_lib)/kernel.lds: $(srcdir)/crt/$(ARCH)/kernel.lds
 $(build_inc)/%: $(srcdir)/include/%
 	cp $< $@
 
+$(build_inc)/%: $(srcdir)/arch/$(ARCH)/%
+	cp $< $@
+
 $(build_inc)/%: $(srcdir)/musl/include/%
+	cp $< $@
+
+$(build_inc)/%: $(srcdir)/musl/arch/generic/%
 	cp $< $@
 
 $(build_inc)/%: $(srcdir)/musl/arch/$(ARCH)/%
 	cp $< $@
 
-$(build_inc)/bits/%: $(build_obj)/musl/include/bits/%
+$(build_inc)/%: $(build_obj)/musl/include/%
 	cp $< $@
 
-$(build_inc)/bits/%: $(srcdir)/musl/arch/generic/bits/%
-	cp $< $@
-
-$(build_inc)/bits/%: $(srcdir)/musl/arch/$(ARCH)/bits/%
-	cp $< $@
+install: install-lib install-inc
+install-lib: $(install_lib)
+install-inc: $(install_inc)
 
 $(DESTDIR)$(libdir)/%: $(build_lib)/%
 	$(INSTALL) -D -m 644 $< $@
 
 $(DESTDIR)$(incdir)/%: $(build_inc)/%
 	$(INSTALL) -D -m 644 $< $@
-
-install-lib: $(install_lib)
-
-install-inc: $(install_inc)
-
-install: install-lib install-inc
 
 endif
 
@@ -216,4 +223,4 @@ clean:
 distclean: clean
 	rm -f config.mk
 
-.PHONY: all clean distclean install install-lib install-inc
+.PHONY: all clean distclean install install-lib install-inc all-libs all-incs

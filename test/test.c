@@ -105,7 +105,7 @@ void synthol_main(start_info_t *start_info, void *init_sp) {
     uint64_t dummy = 0xaaf0;
     uint64_t *x = &dummy;
     SAYU(x); SAY(" contains "); SAYU(*x); NL
-    SAY("> calling go "); NL;
+    SAY("> calling go"); NL;
     // wat();
     // synthol_main(start_info, init_sp);
     // while (1) {

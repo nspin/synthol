@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# Adapted from musl
+
 usage () {
     cat <<EOF
 Usage: $0 [OPTION]... [VAR=VALUE]... [TARGET]
@@ -13,7 +15,7 @@ Configuration:
   --srcdir=DIR            source directory [detected]
 
 Installation directories:
-  --prefix=PREFIX         main installation prefix [/usr/local/musl]
+  --prefix=PREFIX         main installation prefix [/dev/null]
 
 Fine tuning of the installation directories:
   --libdir=DIR            library files for the linker [PREFIX/lib]
@@ -39,7 +41,6 @@ EOF
     exit 0
 }
 
-# Helper functions
 
 quote () {
     tr '\n' ' ' <<EOF | grep '^[-[:alnum:]_=,./:]* $' >/dev/null 2>&1 && { echo "$1" ; return 0 ; }
@@ -101,9 +102,6 @@ tryldflag () {
 }
 
 
-
-# Beginning of actual script
-
 CFLAGS_C99FSE=
 CFLAGS_AUTO=
 CFLAGS_MEMOPS=
@@ -112,7 +110,7 @@ CFLAGS_TRY=
 LDFLAGS_AUTO=
 LDFLAGS_TRY=
 srcdir=
-prefix=/usr/local/synthol
+prefix=/dev/null
 libdir='$(prefix)/lib'
 includedir='$(prefix)/include'
 build=
