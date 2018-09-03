@@ -15,7 +15,7 @@ _start:
     movq %rsi, %rdi
     movq %rsp, %rsi
     add $0x80000, %rsp # we are guarenteed 512K of padding
-    call synthol_main
+    call synthol_setup
 
 .data
 newfpucw:
