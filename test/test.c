@@ -107,7 +107,7 @@ void synthol_main(start_info_t *start_info, void *init_sp) {
     SAYU(x); SAY(" contains "); SAYU(*x); NL
     SAY("> calling go "); NL;
     // wat();
-    synthol_main(start_info, init_sp);
+    // synthol_main(start_info, init_sp);
     // while (1) {
     //     SAYU("HREER");
     //     *x = (uint64_t) x;

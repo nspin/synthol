@@ -13,6 +13,10 @@
 #      + -----------------------
 #        complexity of Makefile
 
+# TODO:
+#	- hardening
+#	- hardening
+
 srcdir = .
 prefix = /usr/local/synthol
 libdir = $(prefix)/lib
