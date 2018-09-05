@@ -2,7 +2,7 @@
 #include <synthol.h>
 
 int synthol_main(void) {
-    synthol_nlogf(100, "i'm alive \\(@o@)/ %s\n", "YAY");
+    synthol_logf("i'm alive %s\n", "\\(@o@)/");
     uint64_t x = 0xababab;
     uint64_t *y = &x;
     uint64_t z = (uint64_t) y;

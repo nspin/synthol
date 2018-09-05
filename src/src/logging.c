@@ -50,12 +50,12 @@ static size_t vlogf_write(FILE *f, const unsigned char *s, size_t l)
 int synthol_vlogf(const char *__restrict fmt, __isoc_va_list ap)
 {
     unsigned char buf[1];
-    char dummy[1];
     FILE f = {
-        .lbf = EOF,
+        .lbf = '\n',
         .write = vlogf_write,
         .lock = -1,
         .buf = buf,
+        .buf_size = 1,
     };
     return vfprintf(&f, fmt, ap);
 }
